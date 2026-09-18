@@ -56,8 +56,8 @@ class router_master_driver extends uvm_driver #(router_seq_item);
 
      // Reset virtual interface variables and internal counters
     task reset_driver_state();
-        vif.data     <= 0;
-        vif.is_valid <= 1'b0;
+        vif.master_cb.data     <= '0;
+        vif.master_cb.is_valid <= 1'b0;
 
         for(int i = 0; i < VC_NUM; i++) begin
             vc_credits[i] = VC_DEPTH;
@@ -92,6 +92,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
                     //Send the flit
                     vif.master_cb.is_valid <= 1'b1;
                     vif.master_cb.data     <= current_flit;
+                    `uvm_info(get_type_name(), $sformatf("Driving Flit to DUT:\n%s", req.sprint()), UVM_LOW)
 
                     // Update counters
                     vc_credits[current_flit.vc_id]--;

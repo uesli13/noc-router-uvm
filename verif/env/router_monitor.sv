@@ -34,7 +34,7 @@ class router_monitor extends uvm_monitor;
                 req = router_seq_item::type_id::create("req"); // Create sequence item for the taken flit
                 req.from_struct(vif.mon_cb.data);              // Convert flit from struct to transaction type
                 ap.write(req);                                 // Send the transaction to the analysis port
-                `uvm_info(get_type_name(), $sformatf("Captured Flit:\n%s", req.sprint()), UVM_HIGH)
+                `uvm_info(get_type_name(), $sformatf("Captured Flit:\n%s", req.sprint()), UVM_LOW)
             end
         end
     endtask

@@ -5,7 +5,10 @@ import uvm_pkg::*;
 import noc_params::*;
 import router_pkg::*;
 
-module tb_top;
+module tb_top #(
+    parameter TB_X_CURRENT = 1,
+    parameter TB_Y_CURRENT = 1
+);
 
     logic clk;
     logic rst_n;
@@ -85,20 +88,20 @@ module tb_top;
     // DUT Instantiation
     router #(
         .BUFFER_SIZE(VC_DEPTH),
-        .X_CURRENT(MESH_SIZE_X/2),
-        .Y_CURRENT(MESH_SIZE_Y/2)
+        .X_CURRENT(TB_X_CURRENT),
+        .Y_CURRENT(TB_Y_CURRENT)
     ) dut (
         .clk(clk),
         .rst(rst),
         
-        // Upstream συνδέσεις
+        // Upstream
         .router_if_local_up (r2r_upstream_LOCAL),
         .router_if_north_up (r2r_upstream_NORTH),
         .router_if_south_up (r2r_upstream_SOUTH),
         .router_if_west_up  (r2r_upstream_WEST),
         .router_if_east_up  (r2r_upstream_EAST),
 
-        // Downstream συνδέσεις (Δίνουμε τα r2r_*)
+        // Downstream
         .router_if_local_down (r2r_downstream_LOCAL),
         .router_if_north_down (r2r_downstream_NORTH),
         .router_if_south_down (r2r_downstream_SOUTH),
@@ -124,6 +127,10 @@ module tb_top;
         uvm_config_db#(virtual router_if)::set(null, "*", "vif_upstream_SOUTH", vif_upstream_SOUTH);
         uvm_config_db#(virtual router_if)::set(null, "*", "vif_upstream_WEST",  vif_upstream_WEST);
         uvm_config_db#(virtual router_if)::set(null, "*", "vif_upstream_EAST",  vif_upstream_EAST);
+        
+        // Set Router Current location variables in the UVM configuration database
+        uvm_config_db#(int)::set(null, "*", "DUT_X_CUR", TB_X_CURRENT);
+        uvm_config_db#(int)::set(null, "*", "DUT_Y_CUR", TB_Y_CURRENT);
 
         run_test("router_sanity_test");
     end

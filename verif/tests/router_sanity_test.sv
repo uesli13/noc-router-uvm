@@ -28,16 +28,20 @@ class router_sanity_test extends uvm_test;
             string down_vif_path    = $sformatf("vif_downstream_%s", port_names[i]);
             string up_vif_path      = $sformatf("vif_upstream_%s", port_names[i]);
 
-            string master_env_path  = $sformatf("env.master_agents[%0d]*", i);
-            string slave_env_path   = $sformatf("env.slave_agents[%0d]*", i);
+            string master_env_path  = $sformatf("env.master_agent_%0d", i);
+            string slave_env_path   = $sformatf("env.slave_agent_%0d", i);
 
-            master_cfg[i] = router_agent_config::type_id::create(master_name, this);
-            slave_cfg[i] = router_agent_config::type_id::create(slave_name, this);
+            master_cfg[i] = router_agent_config::type_id::create(master_name);
+            slave_cfg[i] = router_agent_config::type_id::create(slave_name);
 
             master_cfg[i].mode      = MASTER_AGENT;
             master_cfg[i].is_active = UVM_ACTIVE;
             slave_cfg[i].mode       = SLAVE_AGENT;
-            slave_cfg[i].is_active  =UVM_ACTIVE;
+            slave_cfg[i].is_active  = UVM_ACTIVE;
+
+            // Set time delay range fro flit consumption in the slave driver
+            slave_cfg[i].min_credit_delay = 1;
+            slave_cfg[i].max_credit_delay = 1;
 
             if (!uvm_config_db#(virtual router_if)::get(this, "", down_vif_path, master_cfg[i].vif))
                 `uvm_fatal(get_type_name(), $sformatf("Missing Downstream VIF for %s", port_names[i]))
@@ -58,7 +62,7 @@ class router_sanity_test extends uvm_test;
 
         sanity_seq = router_sanity_seq::type_id::create("sanity_seq");
         sanity_seq.start(env.master_agents[0].sequencer);
-        #100ns
+        #100ns;
 
         `uvm_info(get_type_name(), "Sanity Test finished", UVM_LOW)
         phase.drop_objection(this);

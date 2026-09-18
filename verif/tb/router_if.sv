@@ -5,15 +5,10 @@ interface router_if(
     input logic rst_n
 );
 
-    // flit_t    data;
-    // logic     is_valid;
-    // credits_t credits;
-    // logic [VC_NUM-1:0] is_allocatable;
-
-    wire flit_t data;
-    wire is_valid;
+    wire flit_t    data;
+    wire logic     is_valid;
     wire credits_t credits;
-    wire [1:0] is_allocatable;
+    wire logic [VC_NUM-1:0] is_allocatable;
 
     // Clocking BLock for Master Driver
     clocking master_cb @(posedge clk);
