@@ -3,8 +3,10 @@ package router_pkg;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
     import noc_params::*;
+    import noc_params::BODY;   // BODY also exists in uvm_pkg; use the flit label
 
     typedef enum {MASTER_AGENT, SLAVE_AGENT} agent_mode_e;
+    string PORT_NAMES[5] = '{"LOCAL", "NORTH", "SOUTH", "WEST", "EAST"};
 
     `include "router_agent_config.sv"
     `include "router_seq_item.sv"

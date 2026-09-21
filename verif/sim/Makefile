@@ -51,8 +51,8 @@ XRUN_FLAGS += -linedebug
 XRUN_FLAGS += -svseed $(SEED)   
 XRUN_FLAGS += +UVM_TESTNAME=$(TESTNAME)
 XRUN_FLAGS += +UVM_VERBOSITY=$(VERBOSITY)
-XRUN_FLAGS += -defparam router_tb_top.TB_X_CURRENT=$(X_CUR)
-XRUN_FLAGS += -defparam router_tb_top.TB_Y_CURRENT=$(Y_CUR)
+XRUN_FLAGS += -defparam tb_top.TB_X_CURRENT=$(X_CUR)
+XRUN_FLAGS += -defparam tb_top.TB_Y_CURRENT=$(Y_CUR)
 ifeq ($(GUI), 1)
     XRUN_FLAGS += -gui
 endif

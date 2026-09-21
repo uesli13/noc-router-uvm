@@ -15,8 +15,8 @@ class router_env extends uvm_env;
         `uvm_info(get_type_name(), "Building 5 Master and 5 Slave agents", UVM_LOW)
 
         for(int i = 0; i<5; i++) begin
-            string master_name = $sformatf("master_agent_%0d", i);
-            string slave_name  = $sformatf("slave_agent_%0d", i);
+            string master_name = $sformatf("master_%s", PORT_NAMES[i]);
+            string slave_name  = $sformatf("slave_%s", PORT_NAMES[i]);
 
             master_agents[i] =  router_agent::type_id::create(master_name, this);
             slave_agents[i]  =  router_agent::type_id::create(slave_name, this);

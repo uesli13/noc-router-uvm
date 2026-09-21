@@ -88,7 +88,7 @@ class router_slave_driver extends uvm_driver;
 
                 // Send a credit
                 vif.slave_cb.credits[vc_id] <= 1'b1;
-                `uvm_info(get_type_name(), $sformatf("Returning 1 Credit to VC %0d", vc_id), UVM_LOW)
+                `uvm_info(get_type_name(), $sformatf("Returning 1 Credit to VC %s", vc_id.name()), UVM_LOW)
 
                 // Decrease credit counter
                 pending_credits[int'(vc_id)]--;
@@ -96,7 +96,7 @@ class router_slave_driver extends uvm_driver;
                 // If last flit sent was end of a packet, then the VC is allocatable again
                 if (pending_credits[int'(vc_id)] == 0 && pending_allocatable[vc_id] == 1'b1) begin
                     vif.slave_cb.is_allocatable[vc_id] <= 1'b1;
-                    `uvm_info(get_type_name(), $sformatf("Asserting is_allocatable for VC %0d", vc_id), UVM_LOW)
+                    `uvm_info(get_type_name(), $sformatf("Asserting is_allocatable for VC %s", vc_id.name()), UVM_LOW)
                     pending_allocatable[vc_id] = 1'b0;
                 end
             end

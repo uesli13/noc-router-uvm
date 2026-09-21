@@ -16,7 +16,7 @@ class router_sanity_seq extends uvm_sequence #(router_seq_item);
 
         if(!req.randomize()with {
             flit_label == HEADTAIL;
-            vc_id      == 1'b0;
+            vc_id      == ESCAPE;
             x_dest     == 0;
             y_dest     == 1;
         }) begin
@@ -25,6 +25,6 @@ class router_sanity_seq extends uvm_sequence #(router_seq_item);
 
         finish_item(req);
 
-        `uvm_info(get_type_name(), $sformatf("Sanity Sequence finished. Sent Flit: \n%s", req.sprint()), UVM_LOW)
+        `uvm_info(get_type_name(), $sformatf("Sanity Sequence finished. Sent Flit: %s", req.convert2string()), UVM_LOW)
     endtask
 endclass

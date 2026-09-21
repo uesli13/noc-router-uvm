@@ -1,5 +1,3 @@
-import noc_params::*;
-
 class router_master_driver extends uvm_driver #(router_seq_item);
     `uvm_component_utils(router_master_driver)
 
@@ -30,12 +28,12 @@ class router_master_driver extends uvm_driver #(router_seq_item);
 
     virtual task run_phase(uvm_phase phase);
         forever begin
+            
+            // Reset virtual interface variables and internal counters
+            reset_driver_state();
 
             // Wait until the reset signal unsets
             wait(vif.rst_n === 1'b1);
-
-            // Reset virtual interface variables and internal counters
-            reset_driver_state();
 
             fork
                 drive_loop();
@@ -89,10 +87,15 @@ class router_master_driver extends uvm_driver #(router_seq_item);
                 ready_to_send = check_and_assign_vc(current_flit);
 
                 if(ready_to_send) begin
+
                     //Send the flit
                     vif.master_cb.is_valid <= 1'b1;
                     vif.master_cb.data     <= current_flit;
-                    `uvm_info(get_type_name(), $sformatf("Driving Flit to DUT:\n%s", req.sprint()), UVM_LOW)
+
+                    // Sync the item with the VC actually used (it may change by falling from ADAPTIVE to ESCAPE)
+                    req.vc_id = vc_class_t'(current_flit.vc_id);
+                    
+                    `uvm_info(get_type_name(), $sformatf("Driving Flit to DUT: %s", req.convert2string()), UVM_LOW)
 
                     // Update counters
                     vc_credits[current_flit.vc_id]--;
@@ -148,19 +151,26 @@ class router_master_driver extends uvm_driver #(router_seq_item);
     // Helper function that updates flow control variables based on DUT signals
     function void update_flow_control();
         for(int i = 0; i < VC_NUM; i++) begin
+
+            vc_class_t vc = vc_class_t'(i); // For readable log messages
+
             // Update credit counters
             if(vif.master_cb.credits[i]) begin
                 vc_credits[i]++;
+                `uvm_info(get_type_name(),
+                    $sformatf("Received 1 Credit from DUT for VC %s (available: %0d/%0d)",
+                        vc.name(), vc_credits[i], VC_DEPTH), UVM_LOW)
 
                 // Check for overflow
                 if(vc_credits[i] > VC_DEPTH) begin
-                    `uvm_error(get_type_name(), $sformatf("[CRED_OVF] Credit overflow in VC %0d!", i))
+                    `uvm_error(get_type_name(), $sformatf("[CRED_OVF] Credit overflow in VC %s!", vc.name()))
                 end
             end
 
             // Update allocatability
             if(vif.master_cb.is_allocatable[i]) begin
                 is_vc_allocatable[i] = 1'b1;
+                `uvm_info(get_type_name(), $sformatf("DUT VC %s is allocatable again", vc.name()), UVM_LOW)
             end
         end
     endfunction

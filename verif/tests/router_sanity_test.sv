@@ -19,20 +19,18 @@ class router_sanity_test extends uvm_test;
         router_agent_config master_cfg[5];
         router_agent_config slave_cfg[5];
 
-        string port_names[5] = '{"LOCAL", "NORTH", "SOUTH", "WEST", "EAST"};
-
         for(int i = 0; i < 5; i++) begin
             string master_name = $sformatf("master_cfg_%0d", i);
             string slave_name  = $sformatf("slave_cfg_%0d", i);
 
-            string down_vif_path    = $sformatf("vif_downstream_%s", port_names[i]);
-            string up_vif_path      = $sformatf("vif_upstream_%s", port_names[i]);
+            string down_vif_path    = $sformatf("vif_downstream_%s", PORT_NAMES[i]);
+            string up_vif_path      = $sformatf("vif_upstream_%s", PORT_NAMES[i]);
 
-            string master_env_path  = $sformatf("env.master_agent_%0d", i);
-            string slave_env_path   = $sformatf("env.slave_agent_%0d", i);
+            string master_env_path  = $sformatf("env.master_%s", PORT_NAMES[i]);
+            string slave_env_path   = $sformatf("env.slave_%s",  PORT_NAMES[i]);
 
             master_cfg[i] = router_agent_config::type_id::create(master_name);
-            slave_cfg[i] = router_agent_config::type_id::create(slave_name);
+            slave_cfg[i]  = router_agent_config::type_id::create(slave_name);
 
             master_cfg[i].mode      = MASTER_AGENT;
             master_cfg[i].is_active = UVM_ACTIVE;
@@ -44,10 +42,10 @@ class router_sanity_test extends uvm_test;
             slave_cfg[i].max_credit_delay = 1;
 
             if (!uvm_config_db#(virtual router_if)::get(this, "", down_vif_path, master_cfg[i].vif))
-                `uvm_fatal(get_type_name(), $sformatf("Missing Downstream VIF for %s", port_names[i]))
+                `uvm_fatal(get_type_name(), $sformatf("Missing Downstream VIF for %s", PORT_NAMES[i]))
 
             if (!uvm_config_db#(virtual router_if)::get(this, "", up_vif_path, slave_cfg[i].vif))
-                `uvm_fatal(get_type_name(), $sformatf("Missing Upstream VIF for %s", port_names[i]))
+                `uvm_fatal(get_type_name(), $sformatf("Missing Upstream VIF for %s", PORT_NAMES[i]))
 
             uvm_config_db#(router_agent_config)::set(this, master_env_path, "cfg", master_cfg[i]);
             uvm_config_db#(router_agent_config)::set(this, slave_env_path, "cfg", slave_cfg[i]);
