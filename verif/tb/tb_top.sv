@@ -132,7 +132,7 @@ module tb_top #(
         uvm_config_db#(int)::set(null, "*", "DUT_X_CUR", TB_X_CURRENT);
         uvm_config_db#(int)::set(null, "*", "DUT_Y_CUR", TB_Y_CURRENT);
 
-        run_test("router_sanity_test");
+        run_test();
     end
 
     // Create waveform

@@ -1,0 +1,158 @@
+# SimVision Command Script (Wed Oct 14 17:09:36 EEST 2026)
+#
+# Version 25.03.s006
+#
+# You can restore this configuration with:
+#
+#      xrun -64bit -uvm -sv +incdir+../../DUT_Design/RTL +incdir+../../DUT_Design/Packages +incdir+../../DUT_Design/Interfaces +incdir+../env +incdir+../seq +incdir+../tb +incdir+../tests +incdir+.. -timescale 1ns/1ps -access +rwc -linedebug -svseed random +UVM_TESTNAME=router_sanity_test +UVM_VERBOSITY=UVM_LOW -defparam tb_top.TB_X_CURRENT=1 -defparam tb_top.TB_Y_CURRENT=1 ../../DUT_Design/Packages/noc_params.sv ../../DUT_Design/Interfaces/input_block2crossbar.sv ../../DUT_Design/Interfaces/input_block2switch_allocator.sv ../../DUT_Design/Interfaces/input_block2vc_allocator.sv ../../DUT_Design/Interfaces/router2router.sv ../../DUT_Design/Interfaces/switch_allocator2crossbar.sv ../tb/router_if.sv ../../DUT_Design/RTL/circular_buffer.sv ../../DUT_Design/RTL/crossbar.sv ../../DUT_Design/RTL/input_block.sv ../../DUT_Design/RTL/input_port.sv ../../DUT_Design/RTL/mesh.sv ../../DUT_Design/RTL/node_link.sv ../../DUT_Design/RTL/rc_unit.sv ../../DUT_Design/RTL/round_robin_arbiter.sv ../../DUT_Design/RTL/router.sv ../../DUT_Design/RTL/separable_input_first_allocator.sv ../../DUT_Design/RTL/switch_allocator.sv ../../DUT_Design/RTL/vc_allocator.sv ../../DUT_Design/RTL/vc_buffer.sv ../router_pkg.sv ../tb/tb_top.sv -input /home/p/panaleko/noc-router-uvm/verif/waves/router_waves.svcf
+#
+
+
+#
+# Preferences
+#
+preferences set plugin-enable-svdatabrowser-new 1
+preferences set toolbar-sendToIndago-WaveWindow {
+  usual
+  position -pos 1
+}
+preferences set toolbar-Standard-Console {
+  usual
+  position -pos 1
+}
+preferences set toolbar-Search-Console {
+  usual
+  position -pos 2
+}
+preferences set plugin-enable-groupscope 0
+preferences set plugin-enable-interleaveandcompare 0
+preferences set plugin-enable-waveformfrequencyplot 0
+
+#
+# Simulator
+#
+database require simulator -hints {
+	simulator "xrun -64bit -uvm -sv +incdir+../../DUT_Design/RTL +incdir+../../DUT_Design/Packages +incdir+../../DUT_Design/Interfaces +incdir+../env +incdir+../seq +incdir+../tb +incdir+../tests +incdir+.. -timescale 1ns/1ps -access +rwc -linedebug -svseed random +UVM_TESTNAME=router_sanity_test +UVM_VERBOSITY=UVM_LOW -defparam tb_top.TB_X_CURRENT=1 -defparam tb_top.TB_Y_CURRENT=1 -gui ../../DUT_Design/Packages/noc_params.sv ../../DUT_Design/Interfaces/input_block2crossbar.sv ../../DUT_Design/Interfaces/input_block2switch_allocator.sv ../../DUT_Design/Interfaces/input_block2vc_allocator.sv ../../DUT_Design/Interfaces/router2router.sv ../../DUT_Design/Interfaces/switch_allocator2crossbar.sv ../tb/router_if.sv ../../DUT_Design/RTL/circular_buffer.sv ../../DUT_Design/RTL/crossbar.sv ../../DUT_Design/RTL/input_block.sv ../../DUT_Design/RTL/input_port.sv ../../DUT_Design/RTL/mesh.sv ../../DUT_Design/RTL/node_link.sv ../../DUT_Design/RTL/rc_unit.sv ../../DUT_Design/RTL/round_robin_arbiter.sv ../../DUT_Design/RTL/router.sv ../../DUT_Design/RTL/separable_input_first_allocator.sv ../../DUT_Design/RTL/switch_allocator.sv ../../DUT_Design/RTL/vc_allocator.sv ../../DUT_Design/RTL/vc_buffer.sv ../router_pkg.sv ../tb/tb_top.sv input ../waves/router_sim.tcl"
+}
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+#
+# Design Browser windows
+#
+if {[catch {window new WatchList -name "Design Browser 1" -geometry 1920x882+0+27}] != ""} {
+    window geometry "Design Browser 1" 1920x882+0+27
+}
+window target "Design Browser 1" on
+browser using {Design Browser 1}
+browser set -scope [subst  {simulator::[format {tb_top.r2r_downstream_LOCAL}]} ]
+browser set \
+    -signalsort name
+browser yview see [subst  {simulator::[format {tb_top.r2r_downstream_LOCAL}]} ]
+browser timecontrol set -lock 0
+
+#
+# Waveform windows
+#
+if {[catch {window new WaveWindow -name "Waveform 1" -geometry 1920x882+0+27}] != ""} {
+    window geometry "Waveform 1" 1920x882+0+27
+}
+window target "Waveform 1" on
+waveform using {Waveform 1}
+waveform sidebar visibility partial
+waveform set \
+    -primarycursor TimeA \
+    -signalnames path \
+    -signalwidth 300 \
+    -units ps \
+    -valuewidth 1
+waveform baseline set -time 0
+
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.TB_X_CURRENT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.TB_Y_CURRENT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.error_o[4:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.rst_n}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.clk}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.r2r_downstream_LOCAL.data}]}
+	} ]]
+waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.r2r_downstream_LOCAL.is_valid}]}
+	} ]]
+waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.r2r_downstream_LOCAL.credits[1:0]}]}
+	} ]]
+waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.r2r_downstream_LOCAL.is_allocatable[1:0]}]}
+	} ]]
+waveform format $id -color #ff9900 -namecolor #ff9900
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_SOUTH.data}]}
+	} ]]
+waveform format $id -color #0099ff -namecolor #0099ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_SOUTH.is_valid}]}
+	} ]]
+waveform format $id -color #0099ff -namecolor #0099ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_SOUTH.credits[1:0]}]}
+	} ]]
+waveform format $id -color #0099ff -namecolor #0099ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_SOUTH.is_allocatable[1:0]}]}
+	} ]]
+waveform format $id -color #0099ff -namecolor #0099ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_WEST.data}]}
+	} ]]
+waveform format $id -color #ff00ff -namecolor #ff00ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_WEST.is_valid}]}
+	} ]]
+waveform format $id -color #ff00ff -namecolor #ff00ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_WEST.credits[1:0]}]}
+	} ]]
+waveform format $id -color #ff00ff -namecolor #ff00ff
+set id [waveform add -signals [subst  {
+	{simulator::[format {tb_top.vif_upstream_WEST.is_allocatable[1:0]}]}
+	} ]]
+waveform format $id -color #ff00ff -namecolor #ff00ff
+
+waveform xview limits 0 125000ps
+
+#
+# Waveform Window Links
+#
+
+#
+# Console windows
+#
+console set -windowname Console
+window geometry Console 730x250+261+564
+
+#
+# Layout selection
+#
+

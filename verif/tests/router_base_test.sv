@@ -33,6 +33,9 @@ class router_base_test extends uvm_test;
             slave_cfg[i].mode       = SLAVE_AGENT;
             slave_cfg[i].is_active  = UVM_ACTIVE;
 
+            master_cfg[i].port_id = port_t'(i);
+            slave_cfg[i].port_id  = port_t'(i);
+
             // Default flit consumption delay in the slave driver
             slave_cfg[i].min_credit_delay = 1;
             slave_cfg[i].max_credit_delay = 1;

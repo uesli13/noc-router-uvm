@@ -9,6 +9,8 @@ class router_agent_config extends uvm_object;
     // Declares agent as ACTIVE or PASSIVE
     uvm_active_passive_enum is_active = UVM_ACTIVE;
 
+    // The DUTs' port the agent is connected to 
+    port_t port_id;
 
     //// Slave Driver Control Knobs ////
     

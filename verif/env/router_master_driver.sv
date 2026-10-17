@@ -78,6 +78,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
             if(!req_pending) begin
                 seq_item_port.try_next_item(req); // Non-blocking
                 if(req != null) begin
+                    req.port = cfg.port_id;
                     req_pending = 1'b1;
                     current_flit = req.to_struct();
                 end

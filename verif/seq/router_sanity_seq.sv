@@ -16,9 +16,9 @@ class router_sanity_seq extends uvm_sequence #(router_seq_item);
 
         if(!req.randomize()with {
             flit_label == HEADTAIL;
-            vc_id      == ESCAPE;
+            vc_id      == ADAPTIVE;
             x_dest     == 0;
-            y_dest     == 1;
+            y_dest     == 0;
         }) begin
             `uvm_fatal(get_type_name(), "Randomization failed for Sanity Sequence")
         end

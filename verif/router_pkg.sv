@@ -18,6 +18,7 @@ package router_pkg;
     `include "router_master_driver.sv"
     `include "router_slave_driver.sv"
     `include "router_agent.sv"
+    `include "router_scoreboard.sv"
     `include "router_env.sv"
     `include "router_base_test.sv"
     `include "router_sanity_test.sv"

@@ -6,6 +6,8 @@ TESTNAME  ?= router_sanity_test
 VERBOSITY ?= UVM_LOW
 SEED      ?= random
 GUI       ?= 0
+WAVE_SCRIPT ?= ../waves/router_sim.tcl
+GUI_FLAGS    = -gui -input $(WAVE_SCRIPT)
 X_CUR ?= 1
 Y_CUR ?= 1
 
@@ -23,6 +25,7 @@ INCDIRS   = +incdir+$(RTL_DIR) \
             +incdir+$(VERIF_DIR)/tb \
             +incdir+$(VERIF_DIR)/tests \
             +incdir+$(VERIF_DIR)
+
 
 # ------------------------------------------------------------------------------
 # Source Files with Strict Compilation Order
@@ -53,13 +56,17 @@ XRUN_FLAGS += +UVM_TESTNAME=$(TESTNAME)
 XRUN_FLAGS += +UVM_VERBOSITY=$(VERBOSITY)
 XRUN_FLAGS += -defparam tb_top.TB_X_CURRENT=$(X_CUR)
 XRUN_FLAGS += -defparam tb_top.TB_Y_CURRENT=$(Y_CUR)
+
 ifeq ($(GUI), 1)
-    XRUN_FLAGS += -gui
+    XRUN_FLAGS += $(GUI_FLAGS)
 endif
 
 # ------------------------------------------------------------------------------
 # Execution Targets
 # ------------------------------------------------------------------------------
+
+.PHONY: run gui clean
+
 run:
 	xrun $(XRUN_FLAGS) $(ALL_SRCS)
 
@@ -67,4 +74,4 @@ clean:
 	rm -rf INCA_libs xcelium.d xrun.* waves.shm *.vcd *.log .simvision *.key
 
 gui:
-	xrun $(XRUN_FLAGS) -gui $(ALL_SRCS) &
+	xrun $(XRUN_FLAGS) $(GUI_FLAGS) $(ALL_SRCS) &

@@ -8,10 +8,14 @@ class router_seq_item extends uvm_sequence_item;
     rand bit [DEST_ADDR_SIZE_Y-1:0]  y_dest;     // y destination address
     rand bit [BODY_PAYLOAD_SIZE-1:0] payload;    // body/tail payload
 
+    // Port of the DUT where the Monitor captures the flit
+    port_t port;
+
     // UVM Macros for field registration
     `uvm_object_utils_begin(router_seq_item)
-        `uvm_field_enum(flit_label_t, flit_label, UVM_ALL_ON)
         `uvm_field_enum(vc_class_t, vc_id, UVM_ALL_ON | UVM_NOCOMPARE)
+        `uvm_field_enum(port_t, port,      UVM_ALL_ON | UVM_NOCOMPARE)
+        `uvm_field_enum(flit_label_t, flit_label, UVM_ALL_ON)
         `uvm_field_int(x_dest,                    UVM_ALL_ON)
         `uvm_field_int(y_dest,                    UVM_ALL_ON)
         `uvm_field_int(payload,                   UVM_ALL_ON)
@@ -82,7 +86,7 @@ class router_seq_item extends uvm_sequence_item;
 
     // One-line summary for logs
     function string convert2string();
-        return $sformatf("%s vc=%s dest=(%0d,%0d) pl=%0h", flit_label.name(), vc_id.name(), x_dest, y_dest, payload);
+        return $sformatf("[%s] %s vc=%s dest=(%0d,%0d) pl=%0h",
+                 port.name(), flit_label.name(), vc_id.name(), x_dest, y_dest, payload);
     endfunction
-
 endclass

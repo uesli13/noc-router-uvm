@@ -5,6 +5,8 @@ class router_env extends uvm_env;
     router_agent master_agents[5];
     router_agent slave_agents[5];
 
+    router_scoreboard sb;
+
     function new(string name = "router_env", uvm_component parent = null);
         super.new(name, parent);
     endfunction
@@ -21,9 +23,16 @@ class router_env extends uvm_env;
             master_agents[i] =  router_agent::type_id::create(master_name, this);
             slave_agents[i]  =  router_agent::type_id::create(slave_name, this);
         end
+
+        sb = router_scoreboard::type_id::create("sb", this);
     endfunction
 
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
+
+        for(int i=0; i<5; i++) begin
+            master_agents[i].ap.connect(sb.in_imp);
+            slave_agents[i].ap.connect(sb.out_imp);
+        end
     endfunction
 endclass
