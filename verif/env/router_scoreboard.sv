@@ -99,6 +99,17 @@ class router_scoreboard extends uvm_scoreboard;
         end
     endfunction
 
+    virtual function void check_phase(uvm_phase phase);
+        super.check_phase(phase);
+
+        foreach (in_flight[i])
+            `uvm_error("SB_LEFTOVER", $sformatf("Packet not fully delivered (in %s, %0d/%0d flits out): %s",
+                    in_flight[i].in_port.name(), in_flight[i].next_out, in_flight[i].flits.size(),
+                    in_flight[i].flits[0].convert2string()))
+
+        `uvm_info(get_type_name(), $sformatf("Scoreboard: %0d packets still in flight at end of test",
+                in_flight.size()), UVM_LOW)
+    endfunction
     
     function void remove_in_flight(router_sb_packet pkt);
         foreach (in_flight[i])
