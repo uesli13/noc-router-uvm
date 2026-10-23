@@ -10,6 +10,7 @@ WAVE_SCRIPT ?= ../waves/router_sim.tcl
 GUI_FLAGS    = -gui -input $(WAVE_SCRIPT)
 X_CUR ?= 1
 Y_CUR ?= 1
+MUT ?=
 
 # Relative Paths
 RTL_DIR   = ../../DUT_Design/RTL
@@ -59,6 +60,10 @@ XRUN_FLAGS += -defparam tb_top.TB_Y_CURRENT=$(Y_CUR)
 
 ifeq ($(GUI), 1)
     XRUN_FLAGS += $(GUI_FLAGS)
+endif
+
+ifneq ($(MUT),)
+    XRUN_FLAGS += +define+$(MUT)
 endif
 
 # ------------------------------------------------------------------------------
