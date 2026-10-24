@@ -11,6 +11,7 @@ GUI_FLAGS    = -gui -input $(WAVE_SCRIPT)
 X_CUR ?= 1
 Y_CUR ?= 1
 MUT ?=
+PLUSARGS ?=
 
 # Relative Paths
 RTL_DIR   = ../../DUT_Design/RTL
@@ -65,6 +66,9 @@ endif
 ifneq ($(MUT),)
     XRUN_FLAGS += +define+$(MUT)
 endif
+
+
+XRUN_FLAGS += $(PLUSARGS)
 
 # ------------------------------------------------------------------------------
 # Execution Targets

@@ -5,9 +5,14 @@ class router_sanity_test extends router_base_test;
         super.new(name, parent);
     endfunction
 
-    virtual task run_stimulus();
-        router_sanity_seq sanity_seq = router_sanity_seq::type_id::create("sanity_seq");
-        sanity_seq.start(env.master_agents[0].sequencer); // LOCAL
-    endtask
+    // One HEADTAIL flit, ADAPTIVE, LOCAL -> (0,0)
+    virtual function void set_default_knobs();
+        src_port = LOCAL;
+        num_pkts = 1;
+        pkt_len  = 1;
+        pkt_vc   = ADAPTIVE;
+        x_dest   = 0;
+        y_dest   = 0;
+    endfunction
 
 endclass

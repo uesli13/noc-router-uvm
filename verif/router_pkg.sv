@@ -11,7 +11,7 @@ package router_pkg;
 
     `include "router_agent_config.sv"
     `include "router_seq_item.sv"
-    `include "router_sanity_seq.sv"
+    // `include "router_sanity_seq.sv"
     `include "router_packet_seq.sv"
     `include "router_multi_packet_seq.sv"
     `include "router_monitor.sv"

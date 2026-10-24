@@ -7,15 +7,57 @@ class router_base_test extends uvm_test;
 
     time drain_time = 100ns;
 
+    // Stimulus parameters (-1 means random)
+    // Each test sets its own values in set_default_knobs(), plusargs can overwrite them
+    int num_pkts = 1;     // Number of packets       (+NPKT=)
+    int pkt_len  = -1;    // Flits per packet        (+LEN=)
+    int pkt_vc   = -1;    // VC of the packets       (+VC=ESCAPE/ADAPTIVE/RANDOM)
+    int x_dest   = -1;    // Destination x           (+XD=)
+    int y_dest   = -1;    // Destination y           (+YD=)
+    int src_port = LOCAL; // Master agent that sends (+SRC=LOCAL/NORTH/SOUTH/WEST/EAST)
+
+
     function new(string name = "router_base_test", uvm_component parent = null);
         super.new(name, parent);
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        
+
         env = router_env::type_id::create("env", this);
         configure_agents();
+
+        set_default_knobs(); // Each test's own defaults
+        read_plusargs();     // Command line overrides
+    endfunction
+
+    // Overridden by derived tests to set their own default stimulus
+    virtual function void set_default_knobs();
+    endfunction
+
+    // Read stimulus knobs from the command line
+    function void read_plusargs();
+        string s;
+
+        void'($value$plusargs("NPKT=%d", num_pkts));
+        void'($value$plusargs("LEN=%d",  pkt_len));
+        void'($value$plusargs("XD=%d",   x_dest));
+        void'($value$plusargs("YD=%d",   y_dest));
+
+        if ($value$plusargs("VC=%s", s)) begin
+            if      (s == "ESCAPE")   pkt_vc = ESCAPE;
+            else if (s == "ADAPTIVE") pkt_vc = ADAPTIVE;
+            else if (s == "RANDOM")   pkt_vc = -1;
+            else `uvm_fatal(get_type_name(), {"Unknown +VC value: ", s})
+        end
+
+        if ($value$plusargs("SRC=%s", s)) begin
+            src_port = -1;
+            foreach (PORT_NAMES[i])
+                if (PORT_NAMES[i] == s) src_port = i;
+            if (src_port < 0)
+                `uvm_fatal(get_type_name(), {"Unknown +SRC value: ", s})
+        end
     endfunction
 
     virtual function void configure_agents();
@@ -63,8 +105,23 @@ class router_base_test extends uvm_test;
         phase.drop_objection(this);
     endtask
 
+    // Default stimulus: a sequence of packets shaped by the knobs.
+    // Tests with special stimulus (e.g. several masters in parallel) override it.
     virtual task run_stimulus();
-        `uvm_warning(get_type_name(), "run_stimulus() not overridden: no stimulus was sent")
+        router_multi_packet_seq seq = router_multi_packet_seq::type_id::create("seq");
+
+        seq.len = pkt_len;
+        seq.vc  = pkt_vc;
+        seq.xd  = x_dest;
+        seq.yd  = y_dest;
+
+        if (!seq.randomize() with { (local::num_pkts > 0) -> num_packets == local::num_pkts; })
+            `uvm_fatal(get_type_name(), "Randomization failed for stimulus sequence")
+
+        `uvm_info(get_type_name(), $sformatf("Stimulus: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",
+                  PORT_NAMES[src_port], seq.num_packets, pkt_len, pkt_vc, x_dest, y_dest), UVM_LOW)
+
+        seq.start(env.master_agents[src_port].sequencer);
     endtask
 
     virtual function void report_phase(uvm_phase phase);
