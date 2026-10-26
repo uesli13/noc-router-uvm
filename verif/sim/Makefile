@@ -63,7 +63,13 @@ ifeq ($(GUI), 1)
     XRUN_FLAGS += $(GUI_FLAGS)
 endif
 
+
+KNOWN_MUTS = MUT_SB_DATA MUT_SB_LEFTOVER MUT_SB_VC MUT_SB_ROUTE_XY MUT_SB_ROUTE_ADAPT
+
 ifneq ($(MUT),)
+    ifeq ($(filter $(MUT),$(KNOWN_MUTS)),)
+        $(error Unknown mutation '$(MUT)'. Known: $(KNOWN_MUTS))
+    endif
     XRUN_FLAGS += +define+$(MUT)
 endif
 
