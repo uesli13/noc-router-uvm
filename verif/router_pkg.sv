@@ -24,4 +24,5 @@ package router_pkg;
     `include "router_sanity_test.sv"
     `include "router_packet_test.sv"
     `include "router_multi_packet_test.sv"
+    `include "router_contention_test.sv"
 endpackage
