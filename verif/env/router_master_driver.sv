@@ -12,6 +12,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
 
     bit    req_pending;   // Tells if there's an ongoing transaction at the moment
     bit    ready_to_send; // Tells if there are available VCs in the DUT to receive the current flit
+    bit    open_packet;   // Tells if there's an ongoing packet transaction (HEAD is sent but not TAIL yet)
     flit_t current_flit;  // Holds the transaction's flit
 
     function new(string name = "router_master_driver", uvm_component parent = null);
@@ -64,6 +65,8 @@ class router_master_driver extends uvm_driver #(router_seq_item);
         is_vc_allocatable = {VC_NUM{1'b1}};
         req_pending   = 0;
         ready_to_send = 0;
+        active_vc_id  = ESCAPE;
+        open_packet   = 0;
     endtask
     
     //
@@ -101,10 +104,14 @@ class router_master_driver extends uvm_driver #(router_seq_item);
                     // Update counters
                     vc_credits[current_flit.vc_id]--;
 
-                    if(current_flit.flit_label == HEAD || current_flit.flit_label == HEADTAIL) begin
+                    if(current_flit.flit_label inside {HEAD, HEADTAIL}) begin
                         is_vc_allocatable[current_flit.vc_id] = 1'b0;
                         active_vc_id = vc_class_t'(current_flit.vc_id);
                     end
+
+                    // Update open_packet variable 
+                    if(current_flit.flit_label == HEAD)                      open_packet = 1;
+                    else if(current_flit.flit_label inside {TAIL, HEADTAIL}) open_packet = 0;
 
                     //Check for underflow
                     if(vc_credits[current_flit.vc_id] <0) begin
@@ -128,7 +135,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
 
     // Helper function that checks if there are available VCs to receive the given flit
     function bit check_and_assign_vc(ref flit_t f);
-        if(f.flit_label == HEAD || f.flit_label == HEADTAIL) begin
+        if(f.flit_label inside {HEAD, HEADTAIL}) begin
             if((f.vc_id == ADAPTIVE && vc_credits[ADAPTIVE] > 0 && is_vc_allocatable[ADAPTIVE]) ||
                (f.vc_id == ESCAPE   && vc_credits[ESCAPE]   > 0 && is_vc_allocatable[ESCAPE])) begin
                 return 1'b1;
@@ -139,7 +146,9 @@ class router_master_driver extends uvm_driver #(router_seq_item);
             end
         end
         else begin
-            f.vc_id = active_vc_id;
+            if(open_packet)begin
+                f.vc_id = active_vc_id;
+            end
             if(vc_credits[f.vc_id] > 0) begin
                 return 1'b1;
             end
