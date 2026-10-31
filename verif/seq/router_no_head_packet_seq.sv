@@ -1,7 +1,7 @@
-class router_illegal_packet_seq extends router_packet_seq;
-    `uvm_object_utils(router_illegal_packet_seq)
+class router_no_head_packet_seq extends router_packet_seq;
+    `uvm_object_utils(router_no_head_packet_seq)
 
-    function new(string name = "router_illegal_packet_seq");
+    function new(string name = "router_no_head_packet_seq");
         super.new(name);
     endfunction
 
