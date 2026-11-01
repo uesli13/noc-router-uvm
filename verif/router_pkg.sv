@@ -14,6 +14,7 @@ package router_pkg;
     // `include "router_sanity_seq.sv"
     `include "router_packet_seq.sv"
     `include "router_no_head_packet_seq.sv"
+    `include "router_no_tail_packet_seq.sv"
     `include "router_multi_packet_seq.sv"
     `include "router_monitor.sv"
     `include "router_master_driver.sv"
@@ -27,4 +28,5 @@ package router_pkg;
     `include "router_multi_packet_test.sv"
     `include "router_contention_test.sv"
     `include "router_no_head_packet_test.sv"
+    `include "router_no_tail_packet_test.sv"
 endpackage
