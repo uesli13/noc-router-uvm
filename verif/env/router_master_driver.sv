@@ -136,11 +136,11 @@ class router_master_driver extends uvm_driver #(router_seq_item);
     // Helper function that checks if there are available VCs to receive the given flit
     function bit check_and_assign_vc(ref flit_t f);
         if(f.flit_label inside {HEAD, HEADTAIL}) begin
-            if((f.vc_id == ADAPTIVE && vc_credits[ADAPTIVE] > 0 && is_vc_allocatable[ADAPTIVE]) ||
-               (f.vc_id == ESCAPE   && vc_credits[ESCAPE]   > 0 && is_vc_allocatable[ESCAPE])) begin
+            if((f.vc_id == ADAPTIVE && vc_credits[ADAPTIVE] > 0 && (cfg.ignore_allocatable || is_vc_allocatable[ADAPTIVE])) ||
+               (f.vc_id == ESCAPE   && vc_credits[ESCAPE]   > 0 && (cfg.ignore_allocatable || is_vc_allocatable[ESCAPE]))) begin
                 return 1'b1;
             end
-            else if(f.vc_id == ADAPTIVE && vc_credits[ESCAPE] > 0 && is_vc_allocatable[ESCAPE]) begin
+            else if(f.vc_id == ADAPTIVE && vc_credits[ESCAPE] > 0 && (cfg.ignore_allocatable || is_vc_allocatable[ESCAPE])) begin
                 f.vc_id = ESCAPE;
                 return 1'b1;
             end
