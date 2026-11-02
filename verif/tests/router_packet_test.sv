@@ -10,18 +10,14 @@ class router_packet_test extends router_base_test;
         drain_time = 200ns; // multi-flit packets need more time to leave the DUT
     endfunction
 
-    virtual task run_stimulus();
-        router_packet_seq pkt_seq = router_packet_seq::type_id::create("pkt_seq");
-
-        if(!pkt_seq.randomize()with{
-            pkt_len    == 4;
-            pkt_vc     == ESCAPE;
-            pkt_x_dest == 0;
-            pkt_y_dest == 1;
-        })
-            `uvm_fatal(get_type_name(), "Randomization failed for packet sequence")
-
-        pkt_seq.start(env.master_agents[0].sequencer); // LOCAL
-    endtask
+    // One packet of 4 flits, ESCAPE, LOCAL -> (0,1)
+    virtual function void set_default_knobs();
+        src_port = LOCAL;
+        num_pkts = 1;
+        pkt_len  = 4;
+        pkt_vc   = ESCAPE;
+        x_dest   = 0;
+        y_dest   = 1;
+    endfunction
 
 endclass

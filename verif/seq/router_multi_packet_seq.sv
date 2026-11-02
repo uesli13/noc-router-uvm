@@ -8,12 +8,11 @@ class router_multi_packet_seq extends uvm_sequence #(router_seq_item);
         soft num_packets inside {[1:10]};
     }
 
-    // Deterministic mode: when use_fixed = 1, every packet uses the fixed values below
-    bit                          use_fixed = 0;
-    int unsigned                 fixed_len;
-    vc_class_t                   fixed_vc;
-    bit [DEST_ADDR_SIZE_X-1:0]   fixed_x_dest;
-    bit [DEST_ADDR_SIZE_Y-1:0]   fixed_y_dest;
+    // Per-packet knobs: a negative value leaves the field random for every packet
+    int len = -1;   // flits per packet
+    int vc  = -1;   // 0 = ESCAPE, 1 = ADAPTIVE
+    int xd  = -1;   // destination x
+    int yd  = -1;   // destination y
 
     function new(string name = "router_multi_packet_seq");
         super.new(name);
@@ -22,19 +21,16 @@ class router_multi_packet_seq extends uvm_sequence #(router_seq_item);
     virtual task body();
         router_packet_seq pkt_seq;
 
-        `uvm_info(get_type_name(), $sformatf("Starting %0d packets (fixed mode: %0d)", num_packets, use_fixed), UVM_LOW)
+        `uvm_info(get_type_name(), $sformatf("Starting %0d packets", num_packets), UVM_LOW)
 
         for (int n = 0; n < num_packets; n++) begin
             pkt_seq = router_packet_seq::type_id::create($sformatf("pkt_%0d", n));
 
             if(!pkt_seq.randomize() with {
-                // In fixed mode, force the packet properties; otherwise they are random
-                use_fixed -> {
-                    pkt_len    == fixed_len;
-                    pkt_vc     == fixed_vc;
-                    pkt_x_dest == fixed_x_dest;
-                    pkt_y_dest == fixed_y_dest;
-                }
+                (local::len >= 0) -> pkt_len    == local::len;
+                (local::vc  >= 0) -> pkt_vc     == vc_class_t'(local::vc);
+                (local::xd  >= 0) -> pkt_x_dest == local::xd;
+                (local::yd  >= 0) -> pkt_y_dest == local::yd;
             }) begin
                 `uvm_fatal(get_type_name(), $sformatf("Randomization failed for packet %0d", n))
             end

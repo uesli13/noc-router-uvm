@@ -1,0 +1,148 @@
+diff --git a/RTL/circular_buffer.sv b/RTL/circular_buffer.sv
+index 50193b6..1006213 100644
+--- a/RTL/circular_buffer.sv
++++ b/RTL/circular_buffer.sv
+@@ -27,6 +27,16 @@ module circular_buffer #(
+     logic [POINTER_SIZE:0] num_flits;
+     logic [POINTER_SIZE:0] num_flits_next;
+ 
++`ifdef MUT_SB_EXTRA
++    // MUTATION: the first BODY flit read from this buffer is read twice
++    logic dup_done;
++    always_ff @(posedge clk or posedge rst)
++        if (rst)
++            dup_done <= 1'b0;
++        else if (read_i && memory[read_ptr].flit_label == BODY)
++            dup_done <= 1'b1;
++`endif
++
+   	assign is_empty = (num_flits == 0);
+   	assign is_full = (num_flits == BUFFER_SIZE);
+     assign peek_o = is_empty ? '0 : memory[read_ptr];
+@@ -100,6 +110,14 @@ module circular_buffer #(
+             write_ptr_next = write_ptr;
+             num_flits_next = num_flits;
+         end
++
++`ifdef MUT_SB_EXTRA
++        if (read_i && !dup_done && memory[read_ptr].flit_label == BODY) begin
++            read_ptr_next  = read_ptr;                    // no pop: the same flit is read again
++            num_flits_next = num_flits + (write_i ? 1 : 0);
++        end
++`endif
++
+     end
+ 
+     function logic [POINTER_SIZE-1:0] increase_ptr (input logic [POINTER_SIZE-1:0] ptr);
+diff --git a/RTL/crossbar.sv b/RTL/crossbar.sv
+index cae2573..67f022d 100644
+--- a/RTL/crossbar.sv
++++ b/RTL/crossbar.sv
+@@ -17,6 +17,25 @@ module crossbar(
+         begin
+             if (sa_if.valid_flit[out_port]) begin
+                 data_o[out_port] = ib_if.flit[sa_if.input_port_sel[out_port]];
++`ifdef MUT_SB_DATA
++                // MUTATION: flip bit 0 of the payload of BODY flits
++                if(data_o[out_port].flit_label == BODY)
++                    data_o[out_port].data.bt_pl[0] = ~data_o[out_port].data.bt_pl[0];
++`endif
++
++`ifdef MUT_SB_NOMATCH_HEAD
++                // MUTATION: flip bit 0 of the payload of HEAD/HEADTAIL flits
++                if(data_o[out_port].flit_label inside {HEAD, HEADTAIL})
++                    data_o[out_port].data.head_data.head_pl[0] = ~ data_o[out_port].data.head_data.head_pl[0];
++`endif
++
++`ifdef MUT_SB_NOMATCH_BT
++                // MUTATION: overwrite label of the first flit of a packet
++                if(data_o[out_port].flit_label == HEAD)
++                    data_o[out_port].flit_label = BODY;
++                else if(data_o[out_port].flit_label == HEADTAIL)
++                    data_o[out_port].flit_label = TAIL;
++`endif
+             end
+             else begin
+                 data_o[out_port] = '0;
+diff --git a/RTL/rc_unit.sv b/RTL/rc_unit.sv
+index b432c06..d8e5509 100644
+--- a/RTL/rc_unit.sv
++++ b/RTL/rc_unit.sv
+@@ -53,7 +53,14 @@ module rc_unit #(
+             go_east = (x_dest_i > X_CUR);
+             stay_local = (x_dest_i == X_CUR) && (y_dest_i == Y_CUR);
+ 
+-            
++`ifdef MUT_SB_ROUTE_XY
++            // MUTATION: YX instead of XY (Y dimension resolved first)
++            if      (go_north) escape_port_set[NORTH] = 1'b1;
++            else if (go_south) escape_port_set[SOUTH] = 1'b1;
++            else if (go_west)  escape_port_set[WEST]  = 1'b1;
++            else if (go_east)  escape_port_set[EAST]  = 1'b1;
++            else               escape_port_set[LOCAL] = 1'b1;
++`else
+             //ESCAPE OUTPORT MASK SET
+             if (go_west) begin
+                 escape_port_set[WEST] = 1'b1; // Only WEST is eligible
+@@ -70,9 +77,15 @@ module rc_unit #(
+             else begin
+                 escape_port_set[LOCAL] = 1'b1; // Only LOCAL is eligible
+             end
++`endif
+ 
+             //ADAPTIVE OUTPORT MASK SET
++`ifdef MUT_SB_ROUTE_ADAPT
++            // MUTATION: moving west is offered as EAST (non-minimal port)
++            if (go_west)  adaptive_port_set[EAST]  = 1'b1;
++`else
+             if (go_west)  adaptive_port_set[WEST]  = 1'b1;
++`endif
+             if (go_east)  adaptive_port_set[EAST]  = 1'b1;
+             if (go_north) adaptive_port_set[NORTH] = 1'b1;
+             if (go_south) adaptive_port_set[SOUTH] = 1'b1;
+diff --git a/RTL/router.sv b/RTL/router.sv
+index 8186155..6c325d5 100644
+--- a/RTL/router.sv
++++ b/RTL/router.sv
+@@ -41,8 +41,13 @@ module router #(
+     assign router_if_local_up.is_valid = is_valid_out[LOCAL];
+     assign router_if_north_up.is_valid = is_valid_out[NORTH];
+     assign router_if_south_up.is_valid = is_valid_out[SOUTH];
++    
++`ifdef MUT_SB_LEFTOVER
++    // MUTATION: TAIL flits never get is_valid on the WEST output
++    assign router_if_west_up.is_valid  = is_valid_out[WEST] && (data_out[WEST].flit_label != TAIL);
++`else
+     assign router_if_west_up.is_valid  = is_valid_out[WEST];
+-    assign router_if_east_up.is_valid  = is_valid_out[EAST];
++`endif    assign router_if_east_up.is_valid  = is_valid_out[EAST];
+ 
+     assign credits_in[LOCAL] = router_if_local_up.credits;
+     assign credits_in[NORTH] = router_if_north_up.credits;
+diff --git a/RTL/vc_allocator.sv b/RTL/vc_allocator.sv
+index 33eb62c..c0aa02c 100644
+--- a/RTL/vc_allocator.sv
++++ b/RTL/vc_allocator.sv
+@@ -190,7 +190,9 @@ module vc_allocator #(
+                     ib_if.vc_new[up_port][up_vc] = down_vc[VC_SIZE-1:0]; // Output the allocated VC number to the input block
+                     ib_if.port_new[up_port][up_vc] = port_t'(down_port); // Output the allocated port number to the input block
+                     ib_if.vc_valid[up_port][up_vc] = 1'b1;
++`ifndef MUT_SB_INTERLEAVE
+                     is_available_vc_next[down_port][down_vc] = 1'b0;
++`endif
+                     end  
+                 end
+             end
+@@ -241,8 +243,12 @@ module vc_allocator #(
+                     end                          
+                     if (escape_port_set[up_port][up_vc][down_port]) begin
+                         for (int down_vc = 0; down_vc < VC_NUM; down_vc = down_vc + 1) begin
++`ifdef MUT_SB_VC
++                            class_valid_escape = (down_vc == ADAPTIVE);
++`else
+                             class_valid_escape = (down_vc == ESCAPE) ||
+                                                  ((ADAPTIVE_TIMEOUT == 0) && (down_vc == ADAPTIVE)); // XY uses both classes when timeout is zero
++`endif
+                             if (is_available_vc_i[down_port][down_vc] && credits[down_port][down_vc] && class_valid_escape) begin
+                                 eligible_vc_set_escape[up_port][up_vc][down_port][down_vc] = 1'b1;
+                             end

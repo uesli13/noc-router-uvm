@@ -18,6 +18,10 @@ class router_agent_config extends uvm_object;
     int min_credit_delay = 0;
     int max_credit_delay = 0;
 
+    //// Master Driver Control Knobs ////
+
+    bit ignore_allocatable = 0; // if true, master driver sends head flit without minding allocatability (for illegal stimulus)
+
     function new(string name = "router_agent_config");
         super.new(name);
     endfunction

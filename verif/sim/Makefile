@@ -10,6 +10,8 @@ WAVE_SCRIPT ?= ../waves/router_sim.tcl
 GUI_FLAGS    = -gui -input $(WAVE_SCRIPT)
 X_CUR ?= 1
 Y_CUR ?= 1
+MUT ?=
+PLUSARGS ?=
 
 # Relative Paths
 RTL_DIR   = ../../DUT_Design/RTL
@@ -60,6 +62,19 @@ XRUN_FLAGS += -defparam tb_top.TB_Y_CURRENT=$(Y_CUR)
 ifeq ($(GUI), 1)
     XRUN_FLAGS += $(GUI_FLAGS)
 endif
+
+
+KNOWN_MUTS = MUT_SB_DATA MUT_SB_LEFTOVER MUT_SB_VC MUT_SB_ROUTE_XY MUT_SB_ROUTE_ADAPT MUT_SB_NOMATCH_HEAD MUT_SB_NOMATCH_BT MUT_SB_EXTRA MUT_SB_INTERLEAVE
+
+ifneq ($(MUT),)
+    ifeq ($(filter $(MUT),$(KNOWN_MUTS)),)
+        $(error Unknown mutation '$(MUT)'. Known: $(KNOWN_MUTS))
+    endif
+    XRUN_FLAGS += +define+$(MUT)
+endif
+
+
+XRUN_FLAGS += $(PLUSARGS)
 
 # ------------------------------------------------------------------------------
 # Execution Targets

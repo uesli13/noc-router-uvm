@@ -30,11 +30,8 @@ class router_packet_seq extends uvm_sequence #(router_seq_item);
                   pkt_len, pkt_vc.name(), pkt_x_dest, pkt_y_dest), UVM_LOW)
 
         for (int i = 0; i < pkt_len; i++) begin
-            // Decide the flit's label from its position in the packet
-            if      (pkt_len == 1)       label = HEADTAIL;
-            else if (i == 0)             label = HEAD;
-            else if (i == pkt_len - 1)   label = TAIL;
-            else                         label = BODY;
+
+            label = calc_label(i);
 
             req = router_seq_item::type_id::create($sformatf("flit_%0d", i));
 
@@ -52,5 +49,13 @@ class router_packet_seq extends uvm_sequence #(router_seq_item);
 
         `uvm_info(get_type_name(), "Packet finished", UVM_LOW)
     endtask
+    
+    // Decide the flit's label from its position in the packet
+    virtual function flit_label_t calc_label(int i);
+        if      (pkt_len == 1)       return HEADTAIL;
+        else if (i == 0)             return HEAD;
+        else if (i == pkt_len - 1)   return TAIL;
+        else                         return BODY;
+    endfunction
 
 endclass
