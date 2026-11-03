@@ -8,11 +8,6 @@ class router_contention_test extends router_base_test;
         super.new(name, parent);
     endfunction
 
-    virtual function void build_phase(uvm_phase phase);
-        super.build_phase(phase);
-        drain_time = 300ns;
-    endfunction
-
     virtual function void set_default_knobs();
         // src_port not defined here, but by the test variables
         num_pkts = 1;

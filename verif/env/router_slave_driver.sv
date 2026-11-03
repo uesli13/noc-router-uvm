@@ -7,6 +7,10 @@ class router_slave_driver extends uvm_driver;
     int pending_credits[2];     // Counts the number of credits that need to be sent to DUT
     bit pending_allocatable[2]; // Knows if TAIL or HEADTAIL flit is passed, to drive the is_allocatable signal
 
+    // End-of-test mechanism
+    uvm_phase run_ph;     // Run phase handle (for raise/drop objections)
+    bit       obj_raised; // 1 while the driver holds its objection
+
     function new(string name = "router_slave_driver", uvm_component parent = null);
         super.new(name, parent);
     endfunction
@@ -21,6 +25,8 @@ class router_slave_driver extends uvm_driver;
     endfunction
 
     virtual task run_phase(uvm_phase phase);
+        run_ph = phase; // Extract the handle of the phase
+
         forever begin
             // Reset virtual interface variables and internal signals
             reset_driver_state();
@@ -46,6 +52,7 @@ class router_slave_driver extends uvm_driver;
         vif.slave_cb.is_allocatable  <= 2'b00;
         pending_credits     = '{0, 0};
         pending_allocatable = '{0, 0};
+        slv_obj_drop();
     endtask
 
     // Listens to the incoming signals and updates the internal counters when new flit is received
@@ -64,6 +71,8 @@ class router_slave_driver extends uvm_driver;
                     // If TAIL or HEADTAIL is received, is_allocatable needs to be rose
                     pending_allocatable[f.vc_id] = 1'b1;
                 end
+
+                slv_obj_raise(); // objection should raise when driver "owes" control signal
             end
         end
     endtask
@@ -99,7 +108,28 @@ class router_slave_driver extends uvm_driver;
                     `uvm_info(get_type_name(), $sformatf("Asserting is_allocatable for VC %s", vc_id.name()), UVM_LOW)
                     pending_allocatable[vc_id] = 1'b0;
                 end
+
+                slv_obj_drop(); // if driver owes nothing drop objection
             end
         end
     endtask
+
+    function bit nothing_pending();
+        foreach (pending_credits[i])
+            if (pending_credits[i] != 0 || pending_allocatable[i] == 1'b1)
+                return 0;
+        return 1;
+    endfunction
+
+    function void slv_obj_raise();
+        if (obj_raised) return;
+        run_ph.raise_objection(this, "SLV: credits owed to DUT");
+        obj_raised = 1;
+    endfunction
+
+    function void slv_obj_drop();
+        if (!obj_raised || !nothing_pending()) return;
+        run_ph.drop_objection(this, "SLV: all credits returned");
+        obj_raised = 0;
+    endfunction
 endclass

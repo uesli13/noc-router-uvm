@@ -22,6 +22,18 @@ class router_scoreboard extends uvm_scoreboard;
     router_sb_packet in_open [PORT_NUM][VC_NUM]; // Packet being received at each input (port, VC)
     router_sb_packet out_open[PORT_NUM][VC_NUM]; // Packet being transmitted at each output (port, VC)
 
+    // End-of-test mechanism
+    // The Scoreboard holds ONE objection on the run phase while in_flight is not empty
+    virtual router_if vif;                // Used for clk, rst_n
+    uvm_phase         run_ph;             // Run phase handle (for raise/drop objections)
+    bit               obj_raised;         // 1 while scoreboard holds its objection
+    int unsigned      stall_limit = 1000; // Cycles with no output flit (while packets are inside) before SB_STALL
+    int unsigned      idle_cycles;        // Cycles since the last output flit
+
+    // Statistics for the report_phase summary
+    int unsigned n_flits_in, n_flits_out;
+    int unsigned n_pkts_in,  n_pkts_out;
+
     function new(string name = "router_scoreboard", uvm_component parent = null);
         super.new(name, parent);
     endfunction
@@ -34,10 +46,26 @@ class router_scoreboard extends uvm_scoreboard;
         if(!uvm_config_db#(int)::get(this,"", "DUT_X_CUR" ,dut_x) ||
            !uvm_config_db#(int)::get(this,"", "DUT_Y_CUR" ,dut_y))
            `uvm_fatal(get_type_name(), "Missing DUT coordinates in config_db")
+
+        if(!uvm_config_db#(virtual router_if)::get(this, "", "vif_upstream_LOCAL", vif))
+            `uvm_fatal(get_type_name(), "Missing VIF for the stall detector")
+
+        // Optional override from the test (default above)
+        void'(uvm_config_db#(int unsigned)::get(this, "", "stall_limit", stall_limit));
     endfunction
 
+    virtual task run_phase(uvm_phase phase);
+        run_ph = phase; // No flit can arrive before this point
+        stall_detector();
+    endtask
+
+    // ------------------------------------------------------------------
+    // Analysis imp callbacks
+    // ------------------------------------------------------------------
     function void write_in(router_seq_item t);
         router_sb_packet pkt;
+
+        n_flits_in++;
 
         if (t.flit_label inside {HEAD, HEADTAIL}) begin
             if (in_open[t.port][t.vc_id] != null)
@@ -47,6 +75,8 @@ class router_scoreboard extends uvm_scoreboard;
             pkt.in_vc   = t.vc_id;
             in_flight.push_back(pkt);
             in_open[t.port][t.vc_id] = pkt;
+            n_pkts_in++;
+            sb_obj_raise(); // No-op unless in_flight just went 0 -> 1
         end
         else begin
             pkt = in_open[t.port][t.vc_id];
@@ -65,6 +95,9 @@ class router_scoreboard extends uvm_scoreboard;
     function void write_out(router_seq_item t);
         router_sb_packet pkt;
 
+        n_flits_out++;
+        idle_cycles = 0;
+
         if (t.flit_label inside {HEAD, HEADTAIL}) begin
             if (out_open[t.port][t.vc_id] != null)
                 `uvm_error("SB_INTERLEAVE", $sformatf("HEAD on output VC before previous TAIL: %s", t.convert2string()))
@@ -82,35 +115,94 @@ class router_scoreboard extends uvm_scoreboard;
         else begin
             pkt = out_open[t.port][t.vc_id];
             if (pkt == null) begin
-                `uvm_error("SB_NOMATCH", $sformatf("Output BODY/TAIL with no open packet: %s", t.convert2string())) 
+                `uvm_error("SB_NOMATCH", $sformatf("Output BODY/TAIL with no open packet: %s", t.convert2string()))
                 return;
             end
             if (pkt.next_out >= pkt.flits.size())
-                `uvm_error("SB_EXTRA", $sformatf("Output flit with no corresponding input flit: %s", t.convert2string())) 
+                `uvm_error("SB_EXTRA", $sformatf("Output flit with no corresponding input flit: %s", t.convert2string()))
             else if (!pkt.flits[pkt.next_out].compare(t))
-                `uvm_error("SB_DATA", $sformatf("Flit %0d mismatch. Expected %s, got %s",              
-                        pkt.next_out, pkt.flits[pkt.next_out].convert2string(), t.convert2string()))   
+                `uvm_error("SB_DATA", $sformatf("Flit %0d mismatch. Expected %s, got %s",
+                        pkt.next_out, pkt.flits[pkt.next_out].convert2string(), t.convert2string()))
             pkt.next_out++;
         end
 
         if (t.flit_label inside {TAIL, HEADTAIL}) begin
             out_open[t.port][t.vc_id] = null;
             remove_in_flight(pkt);
+            n_pkts_out++;
+            sb_obj_drop(); // No-op unless in_flight just went 1 -> 0
         end
     endfunction
 
+    // ------------------------------------------------------------------
+    // Objection handling
+    // ------------------------------------------------------------------
+    function void sb_obj_raise();
+        if (obj_raised) return;
+        if (run_ph == null)
+            `uvm_fatal(get_type_name(), "Flit received before the run phase started")
+        run_ph.raise_objection(this, "SB: packets in flight");
+        obj_raised  = 1;
+    endfunction
+
+    function void sb_obj_drop(bit force_drop = 0);
+        if (!obj_raised) return;
+        if (!force_drop && in_flight.size() != 0) return;
+        run_ph.drop_objection(this, force_drop ? "SB: stall, objection released" : "SB: DUT empty");
+        obj_raised = 0;
+    endfunction
+
+    // Progress stall_detector: if packets are inside the DUT but nothing comes out
+    // for stall_limit cycles, report SB_STALL and release the objection so
+    // that check_phase / report_phase still run (SB_LEFTOVER gives the details).
+    task stall_detector();
+        forever begin
+            @(posedge vif.clk);
+            if (vif.rst_n !== 1'b1 || !obj_raised) begin
+                idle_cycles = 0;
+                continue;
+            end
+            if (++idle_cycles >= stall_limit) begin
+                `uvm_error("SB_STALL", $sformatf("No output flit for %0d cycles with %0d packet(s) in flight, releasing objection",
+                        idle_cycles, in_flight.size()))
+                sb_obj_drop(.force_drop(1));
+                idle_cycles = 0;
+            end
+        end
+    endtask
+
+    // ------------------------------------------------------------------
+    // End of test checks and summary
+    // ------------------------------------------------------------------
     virtual function void check_phase(uvm_phase phase);
         super.check_phase(phase);
 
-        foreach (in_flight[i])
-            `uvm_error("SB_LEFTOVER", $sformatf("Packet not fully delivered (in %s, %0d/%0d flits out): %s",
-                    in_flight[i].in_port.name(), in_flight[i].next_out, in_flight[i].flits.size(),
-                    in_flight[i].flits[0].convert2string()))
+        // One error per leftover packet, classified by where it got stuck
+        foreach (in_flight[i]) begin
+            router_sb_packet p = in_flight[i];
+            string state;
 
-        `uvm_info(get_type_name(), $sformatf("Scoreboard: %0d packets still in flight at end of test",
-                in_flight.size()), UVM_LOW)
+            if (in_open[p.in_port][p.in_vc] == p)
+                state = "input incomplete, TAIL never entered the DUT";
+            else if (p.matched)
+                state = $sformatf("partially delivered, %0d/%0d flits out", p.next_out, p.flits.size());
+            else
+                state = "never left the DUT";
+
+            `uvm_error("SB_LEFTOVER", $sformatf("Packet in %s/%s %s: %s",
+                    p.in_port.name(), p.in_vc.name(), state, p.flits[0].convert2string()))
+        end
     endfunction
-    
+
+    virtual function void report_phase(uvm_phase phase);
+        super.report_phase(phase);
+        `uvm_info(get_type_name(), $sformatf("Summary: packets in=%0d out=%0d left=%0d | flits in=%0d out=%0d",
+                n_pkts_in, n_pkts_out, in_flight.size(), n_flits_in, n_flits_out), UVM_NONE)
+    endfunction
+
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
     function void remove_in_flight(router_sb_packet pkt);
         foreach (in_flight[i])
             if (in_flight[i] == pkt) begin
@@ -149,29 +241,16 @@ class router_scoreboard extends uvm_scoreboard;
             `uvm_error("SB_ROUTE", $sformatf("ADAPTIVE output not on a minimal port: %s", out.convert2string()))
     endfunction
 
-
-    // If routing was based on the input flit's vc_id this would be the check_routing
-    // function void check_routing(router_sb_packet pkt, router_seq_item out);
-    //     router_seq_item head = pkt.flits[0];
-    //     if (pkt.in_vc == ESCAPE && out.vc_id == ADAPTIVE)
-    //         `uvm_error("SB_VC", $sformatf("Illegal VC change ESCAPE->ADAPTIVE: %s", out.convert2string()))
-    //     else if (pkt.in_vc == ESCAPE && out.port != xy_port(head.x_dest, head.y_dest))
-    //         `uvm_error("SB_ROUTE", $sformatf("ESCAPE packet not routed to XY port (expected %s): %s",
-    //                 xy_port(head.x_dest, head.y_dest).name(), out.convert2string()))
-    //     else if (pkt.in_vc == ADAPTIVE && !is_minimal_port(out.port, head.x_dest, head.y_dest))
-    //         `uvm_error("SB_ROUTE", $sformatf("ADAPTIVE packet not routed to a minimal port: %s", out.convert2string()))
-    // endfunction
-
     function router_sb_packet find_match(router_seq_item t);
-    foreach (in_flight[i]) begin
-        router_seq_item h = in_flight[i].flits[0];
-        if (!in_flight[i].matched &&
-            h.flit_label == t.flit_label &&
-            h.x_dest == t.x_dest && h.y_dest == t.y_dest &&
-            h.payload == t.payload)
-            return in_flight[i];
-    end
-    return null;
-endfunction
+        foreach (in_flight[i]) begin
+            router_seq_item h = in_flight[i].flits[0];
+            if (!in_flight[i].matched &&
+                h.flit_label == t.flit_label &&
+                h.x_dest == t.x_dest && h.y_dest == t.y_dest &&
+                h.payload == t.payload)
+                return in_flight[i];
+        end
+        return null;
+    endfunction
 
 endclass

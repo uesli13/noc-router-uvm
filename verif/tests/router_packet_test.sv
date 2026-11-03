@@ -5,11 +5,6 @@ class router_packet_test extends router_base_test;
         super.new(name, parent);
     endfunction
 
-    virtual function void build_phase(uvm_phase phase);
-        super.build_phase(phase);
-        drain_time = 200ns; // multi-flit packets need more time to leave the DUT
-    endfunction
-
     // One packet of 4 flits, ESCAPE, LOCAL -> (0,1)
     virtual function void set_default_knobs();
         src_port = LOCAL;

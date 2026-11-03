@@ -5,7 +5,10 @@ class router_base_test extends uvm_test;
     router_agent_config master_cfg[5];
     router_agent_config slave_cfg[5];
 
-    time drain_time = 100ns;
+    // End-of-test settings
+    time         drain_time     = 3 * CLK_PERIOD;
+    int unsigned stall_limit    = 1000;   // cycles without output          (+STALL_LIMIT=)
+    time         global_timeout = 1ms;    // Safety net for testbench hangs (+TIMEOUT_NS=)
 
     // Stimulus parameters (-1 means random)
     // Each test sets its own values in set_default_knobs(), plusargs can overwrite them
@@ -29,6 +32,9 @@ class router_base_test extends uvm_test;
 
         set_default_knobs(); // Each test's own defaults
         read_plusargs();     // Command line overrides
+
+        uvm_config_db#(int unsigned)::set(this, "env.sb", "stall_limit", stall_limit);
+        uvm_top.set_timeout(global_timeout, 1);
     endfunction
 
     // Overridden by derived tests to set their own default stimulus
@@ -38,11 +44,16 @@ class router_base_test extends uvm_test;
     // Read stimulus knobs from the command line
     function void read_plusargs();
         string s;
+        int    tmo_ns;
 
         void'($value$plusargs("NPKT=%d", num_pkts));
         void'($value$plusargs("LEN=%d",  pkt_len));
         void'($value$plusargs("XD=%d",   x_dest));
         void'($value$plusargs("YD=%d",   y_dest));
+        void'($value$plusargs("STALL_LIMIT=%d", stall_limit));
+
+        if ($value$plusargs("TIMEOUT_NS=%d", tmo_ns))
+            global_timeout = tmo_ns * 1ns;
 
         if ($value$plusargs("VC=%s", s)) begin
             if      (s == "ESCAPE")   pkt_vc = ESCAPE;
@@ -101,7 +112,7 @@ class router_base_test extends uvm_test;
 
         run_stimulus();
 
-        `uvm_info(get_type_name(), "Stimulus finished, draining...", UVM_LOW)
+        `uvm_info(get_type_name(), "Stimulus finished, waiting for scoreboard and slave agents to drain", UVM_LOW)
         phase.drop_objection(this);
     endtask
 
