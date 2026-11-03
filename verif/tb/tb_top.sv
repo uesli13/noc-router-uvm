@@ -20,13 +20,13 @@ module tb_top #(
     // Clock Generation
     initial begin
         clk = 1'b0;
-        forever #5 clk = ~clk;
+        forever #(CLK_PERIOD/2) clk = ~clk;
     end
 
     // Reset Generation
     initial begin
         rst_n = 1'b0;
-        #25;
+        #(2.5 * CLK_PERIOD);
         rst_n = 1'b1;
     end
 

@@ -8,6 +8,7 @@ package router_pkg;
     typedef enum {MASTER_AGENT, SLAVE_AGENT} agent_mode_e;
     string PORT_NAMES[5] = '{"LOCAL", "NORTH", "SOUTH", "WEST", "EAST"};
     parameter int MAX_PACKET_LEN = 4;   // max flits per packet
+    parameter time CLK_PERIOD = 10ns;
 
     `include "router_agent_config.sv"
     `include "router_seq_item.sv"
