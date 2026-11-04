@@ -35,7 +35,7 @@ index 50193b6..1006213 100644
  
      function logic [POINTER_SIZE-1:0] increase_ptr (input logic [POINTER_SIZE-1:0] ptr);
 diff --git a/RTL/crossbar.sv b/RTL/crossbar.sv
-index cae2573..67f022d 100644
+index cae2573..594fcdf 100644
 --- a/RTL/crossbar.sv
 +++ b/RTL/crossbar.sv
 @@ -17,6 +17,25 @@ module crossbar(
@@ -48,13 +48,13 @@ index cae2573..67f022d 100644
 +                    data_o[out_port].data.bt_pl[0] = ~data_o[out_port].data.bt_pl[0];
 +`endif
 +
-+`ifdef MUT_SB_NOMATCH_HEAD
++`ifdef MUT_SB_NOMATCH
 +                // MUTATION: flip bit 0 of the payload of HEAD/HEADTAIL flits
 +                if(data_o[out_port].flit_label inside {HEAD, HEADTAIL})
 +                    data_o[out_port].data.head_data.head_pl[0] = ~ data_o[out_port].data.head_data.head_pl[0];
 +`endif
 +
-+`ifdef MUT_SB_NOMATCH_BT
++`ifdef MUT_SB_OUT_NO_HEAD
 +                // MUTATION: overwrite label of the first flit of a packet
 +                if(data_o[out_port].flit_label == HEAD)
 +                    data_o[out_port].flit_label = BODY;
@@ -65,7 +65,7 @@ index cae2573..67f022d 100644
              else begin
                  data_o[out_port] = '0;
 diff --git a/RTL/rc_unit.sv b/RTL/rc_unit.sv
-index b432c06..d8e5509 100644
+index b432c06..100e396 100644
 --- a/RTL/rc_unit.sv
 +++ b/RTL/rc_unit.sv
 @@ -53,7 +53,14 @@ module rc_unit #(
@@ -91,7 +91,7 @@ index b432c06..d8e5509 100644
 +`endif
  
              //ADAPTIVE OUTPORT MASK SET
-+`ifdef MUT_SB_ROUTE_ADAPT
++`ifdef MUT_SB_ROUTE_MIN
 +            // MUTATION: moving west is offered as EAST (non-minimal port)
 +            if (go_west)  adaptive_port_set[EAST]  = 1'b1;
 +`else

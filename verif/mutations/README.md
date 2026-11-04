@@ -31,19 +31,19 @@ DUT at (1,1).
 | MUT_SB_DATA | crossbar.sv | flip payload bit 0 of BODY flits | router_packet_test | 2 x SB_DATA |
 | MUT_SB_LEFTOVER | router.sv | no is_valid for TAIL on WEST | router_packet_test +STALL_LIMIT=50 | SB_STALL, SB_LEFTOVER (3/4) |
 | MUT_SB_VC | vc_allocator.sv | ESCAPE packets get only ADAPTIVE VCs | router_packet_test | SB_VC |
-| MUT_SB_ROUTE_XY | rc_unit.sv | YX instead of XY | router_sanity_test +VC=ESCAPE | SB_ROUTE |
-| MUT_SB_ROUTE_ADAPT | rc_unit.sv | WEST replaced by EAST in adaptive set | router_sanity_test +YD=1 | SB_ROUTE |
-| MUT_SB_NOMATCH_HEAD | crossbar.sv | flip payload bit 0 of HEAD flits | router_sanity_test +STALL_LIMIT=50 | SB_NOMATCH, SB_STALL, SB_LEFTOVER |
-| MUT_SB_NOMATCH_BT | crossbar.sv | HEAD -> BODY, HEADTAIL -> TAIL | router_sanity_test +STALL_LIMIT=50 | SB_NOMATCH, SB_STALL, SB_LEFTOVER |
+| MUT_SB_ROUTE_XY | rc_unit.sv | YX instead of XY | router_sanity_test +VC=ESCAPE | SB_ROUTE_XY |
+| MUT_SB_ROUTE_MIN | rc_unit.sv | WEST replaced by EAST in adaptive set | router_sanity_test +YD=1 | SB_ROUTE_MIN |
+| MUT_SB_NOMATCH | crossbar.sv | flip payload bit 0 of HEAD flits | router_sanity_test +STALL_LIMIT=50 | SB_NOMATCH, SB_STALL, SB_LEFTOVER |
+| MUT_SB_OUT_NO_HEAD | crossbar.sv | HEAD -> BODY, HEADTAIL -> TAIL | router_sanity_test +STALL_LIMIT=50 | SB_OUT_NO_HEAD, SB_STALL, SB_LEFTOVER |
 | MUT_SB_EXTRA | circular_buffer.sv | first BODY flit is read twice | router_packet_test | 2 x SB_DATA, SB_EXTRA, CRED_OVF |
 | MUT_SB_INTERLEAVE | vc_allocator.sv | allocated VC not marked as busy | router_contention_test | SB_INTERLEAVE + more |
 
-Tests options go in `PLUSARGS`, e.g. `PLUSARGS="+VC=ESCAPE"`.
+Test options go in `PLUSARGS`, e.g. `PLUSARGS="+VC=ESCAPE"`.
 
 The two ROUTE mutations are not caught with every destination (e.g. MUT_SB_ROUTE_XY with
 +YD=1 passes), because the wrong and the right port can be the same.
 
-## SB_IN_PROTO
+## SB_IN_NO_HEAD, SB_IN_NO_TAIL
 
 These two checks need illegal stimulus, not RTL changes:
 

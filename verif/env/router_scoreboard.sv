@@ -69,19 +69,19 @@ class router_scoreboard extends uvm_scoreboard;
 
         if (t.flit_label inside {HEAD, HEADTAIL}) begin
             if (in_open[t.port][t.vc_id] != null)
-                `uvm_error("SB_IN_PROTO", $sformatf("HEAD before previous TAIL at input: %s", t.convert2string())) 
+                `uvm_error("SB_IN_NO_TAIL", $sformatf("HEAD before previous TAIL at input: %s", t.convert2string())) 
             pkt = new();
             pkt.in_port = t.port;
             pkt.in_vc   = t.vc_id;
             in_flight.push_back(pkt);
             in_open[t.port][t.vc_id] = pkt;
             n_pkts_in++;
-            sb_obj_raise(); // No-op unless in_flight just went 0 -> 1
+            sb_obj_raise();
         end
         else begin
             pkt = in_open[t.port][t.vc_id];
             if (pkt == null) begin
-                `uvm_error("SB_IN_PROTO", $sformatf("BODY/TAIL with no open packet at input: %s", t.convert2string()))
+                `uvm_error("SB_IN_NO_HEAD", $sformatf("BODY/TAIL with no open packet at input: %s", t.convert2string()))
                 return; 
             end
         end
@@ -115,7 +115,7 @@ class router_scoreboard extends uvm_scoreboard;
         else begin
             pkt = out_open[t.port][t.vc_id];
             if (pkt == null) begin
-                `uvm_error("SB_NOMATCH", $sformatf("Output BODY/TAIL with no open packet: %s", t.convert2string()))
+                `uvm_error("SB_OUT_NO_HEAD", $sformatf("Output BODY/TAIL with no open packet: %s", t.convert2string()))
                 return;
             end
             if (pkt.next_out >= pkt.flits.size())
@@ -235,10 +235,10 @@ class router_scoreboard extends uvm_scoreboard;
         if (pkt.in_vc == ESCAPE && out.vc_id == ADAPTIVE)
             `uvm_error("SB_VC", $sformatf("Illegal VC change ESCAPE->ADAPTIVE: %s", out.convert2string()))
         else if (out.vc_id == ESCAPE && out.port != xy_port(head.x_dest, head.y_dest))
-            `uvm_error("SB_ROUTE", $sformatf("ESCAPE output not on XY port (%s): %s",
+            `uvm_error("SB_ROUTE_XY", $sformatf("ESCAPE output not on XY port (%s): %s",
                     xy_port(head.x_dest, head.y_dest).name(), out.convert2string()))
         else if (out.vc_id == ADAPTIVE && !is_minimal_port(out.port, head.x_dest, head.y_dest))
-            `uvm_error("SB_ROUTE", $sformatf("ADAPTIVE output not on a minimal port: %s", out.convert2string()))
+            `uvm_error("SB_ROUTE_MIN", $sformatf("ADAPTIVE output not on a minimal port: %s", out.convert2string()))
     endfunction
 
     function router_sb_packet find_match(router_seq_item t);
