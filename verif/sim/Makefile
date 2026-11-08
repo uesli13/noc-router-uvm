@@ -42,7 +42,9 @@ SRC_IF    = $(wildcard $(IF_DIR)/*.sv) \
 SRC_RTL   = $(filter-out $(RTL_DIR)/noc_params.sv, $(wildcard $(RTL_DIR)/*.sv))
 
 SRC_TB    = $(VERIF_DIR)/router_pkg.sv \
-            $(VERIF_DIR)/tb/tb_top.sv
+            $(VERIF_DIR)/tb/router_error_sva.sv \
+			$(VERIF_DIR)/tb/tb_top.sv
+			
 
 ALL_SRCS  = $(SRC_PKG) $(SRC_IF) $(SRC_RTL) $(SRC_TB)
 
@@ -88,7 +90,7 @@ REGRESS_TESTS = router_sanity_test \
                 router_multi_packet_test \
                 router_contention_test
 
-# Tests that fail on purpose for now (illegal stimulus, until error_o checking is added)
+# Tests that fail on purpose for now (illegal stimulus, fail on purpose)
 EXPECT_FAIL   = router_no_head_packet_test \
                 router_no_tail_packet_test
 
@@ -108,7 +110,7 @@ regress:
 	@mkdir -p $(LOG_DIR)
 	@for t in $(REGRESS_TESTS) $(EXPECT_FAIL); do \
 	    echo "Running $$t ..."; \
-	    $(MAKE) --no-print-directory run TESTNAME=$$t LOG=$(LOG_DIR)/$$t.log > /dev/null 2>&1; \
+		$(MAKE) --no-print-directory run TESTNAME=$$t LOG=$(LOG_DIR)/$$t.log > /dev/null 2>&1 || true; \
 	done
 	@echo ""
 	@echo "==================== Regression summary ===================="

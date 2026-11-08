@@ -111,6 +111,13 @@ module tb_top #(
         .error_o(error_o)
     );
 
+    //
+    router_error_sva sva (
+        .clk    (clk),
+        .rst_n  (rst_n),
+        .error_o(error_o)
+    );
+
     initial begin
         // Set the virtual interfaces in the UVM configuration database
         
