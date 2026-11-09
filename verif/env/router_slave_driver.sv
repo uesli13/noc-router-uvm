@@ -90,7 +90,7 @@ class router_slave_driver extends uvm_driver;
             if (pending_credits[int'(vc_id)] > 0) begin
                 
                 // Choose random cycles delay using config
-                int delay = $urandom_range(cfg.min_credit_delay, cfg.max_credit_delay);
+                int delay = $urandom_range(cfg.min_credit_delay[vc_id], cfg.max_credit_delay[vc_id]);
                 
                 // Simulate delay of sending a flit
                 repeat(delay) @(vif.slave_cb);

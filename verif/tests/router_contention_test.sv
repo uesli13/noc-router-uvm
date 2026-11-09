@@ -18,41 +18,13 @@ class router_contention_test extends router_base_test;
     endfunction
 
     virtual task run_stimulus();
-
-        router_multi_packet_seq seq_1 = router_multi_packet_seq::type_id::create("seq_1");
-        router_multi_packet_seq seq_2 = router_multi_packet_seq::type_id::create("seq_2");
-        
         if(src_port_1 == src_port_2)
             `uvm_fatal(get_type_name(), "Two sources can't be at the same port")
 
-        seq_1.len      = pkt_len;
-        seq_1.vc       = pkt_vc;
-        seq_1.xd       = x_dest;
-        seq_1.yd       = y_dest;
-
-        seq_2.len      = pkt_len;
-        seq_2.vc       = pkt_vc;
-        seq_2.xd       = x_dest;
-        seq_2.yd       = y_dest;
-
-        if (!seq_1.randomize() with { (local::num_pkts > 0) -> num_packets == local::num_pkts; })
-            `uvm_fatal(get_type_name(), "Randomization of seq_1 failed for stimulus sequence")
-        
-        if (!seq_2.randomize() with { (local::num_pkts > 0) -> num_packets == local::num_pkts; })
-            `uvm_fatal(get_type_name(), "Randomization of seq_2 failed for stimulus sequence")
-
-        `uvm_info(get_type_name(), $sformatf("Stimulus: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",
-                  src_port_1.name(), seq_1.num_packets, pkt_len, pkt_vc, x_dest, y_dest), UVM_LOW)
-        
-        `uvm_info(get_type_name(), $sformatf("Stimulus: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",
-                  src_port_2.name(), seq_2.num_packets, pkt_len, pkt_vc, x_dest, y_dest), UVM_LOW)
-        
-
         fork
-            seq_1.start(env.master_agents[src_port_1].sequencer);
-            seq_2.start(env.master_agents[src_port_2].sequencer);
+            send_packets("seq_1", src_port_1, num_pkts, pkt_len, pkt_vc, x_dest, y_dest);
+            send_packets("seq_2", src_port_2, num_pkts, pkt_len, pkt_vc, x_dest, y_dest);
         join
-
     endtask
 
 endclass

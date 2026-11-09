@@ -28,10 +28,10 @@ class router_base_test extends uvm_test;
         super.build_phase(phase);
 
         env = router_env::type_id::create("env", this);
-        configure_agents();
 
         set_default_knobs(); // Each test's own defaults
         read_plusargs();     // Command line overrides
+        configure_agents();  // Agent configuration (may depend on the knobs)
 
         uvm_config_db#(int unsigned)::set(this, "env.sb", "stall_limit", stall_limit);
         uvm_top.set_timeout(global_timeout, 1);
@@ -90,8 +90,8 @@ class router_base_test extends uvm_test;
             slave_cfg[i].port_id  = port_t'(i);
 
             // Default flit consumption delay in the slave driver
-            slave_cfg[i].min_credit_delay = 1;
-            slave_cfg[i].max_credit_delay = 1;
+            slave_cfg[i].min_credit_delay = '{default: 1};
+            slave_cfg[i].max_credit_delay = '{default: 1};
 
             if(!uvm_config_db#(virtual router_if)::get(this, "", down_vif_path, master_cfg[i].vif))
                 `uvm_fatal(get_type_name(), $sformatf("Missing Downstream VIF for %s", PORT_NAMES[i]))
@@ -117,22 +117,9 @@ class router_base_test extends uvm_test;
     endtask
 
     // Default stimulus: a sequence of packets shaped by the knobs.
-    // Tests with special stimulus (e.g. several masters in parallel) override it.
+    // Tests with different stimulus override it.
     virtual task run_stimulus();
-        router_multi_packet_seq seq = router_multi_packet_seq::type_id::create("seq");
-
-        seq.len = pkt_len;
-        seq.vc  = pkt_vc;
-        seq.xd  = x_dest;
-        seq.yd  = y_dest;
-
-        if (!seq.randomize() with { (local::num_pkts > 0) -> num_packets == local::num_pkts; })
-            `uvm_fatal(get_type_name(), "Randomization failed for stimulus sequence")
-
-        `uvm_info(get_type_name(), $sformatf("Stimulus: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",
-                  PORT_NAMES[src_port], seq.num_packets, pkt_len, pkt_vc, x_dest, y_dest), UVM_LOW)
-
-        seq.start(env.master_agents[src_port].sequencer);
+        send_packets("seq", port_t'(src_port), num_pkts, pkt_len, pkt_vc, x_dest, y_dest);
     endtask
 
     virtual function void report_phase(uvm_phase phase);
@@ -149,5 +136,24 @@ class router_base_test extends uvm_test;
         else
             `uvm_info(get_type_name(), $sformatf("** TEST FAILED ** (%0d errors)", err_count), UVM_NONE)
     endfunction
+
+
+    // Create, randomize and send a router_multi_packet_seq from a master agent.
+    task send_packets(string name, port_t src, int npkt, int len, int vc, int xd, int yd);
+        router_multi_packet_seq seq = router_multi_packet_seq::type_id::create(name);
+
+        seq.len = len;
+        seq.vc  = vc;
+        seq.xd  = xd;
+        seq.yd  = yd;
+
+        if(!seq.randomize() with {(local::num_pkts > 0) ->  num_packets == local::npkt;})
+            `uvm_fatal(get_type_name(), $sformatf("Randomization failed for %s", name))
+
+        `uvm_info(get_type_name(), $sformatf("Stimulus %s: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",
+                  name, src.name(), seq.num_packets, len, vc, xd, yd), UVM_LOW)
+
+        seq.start(env.master_agents[src].sequencer);
+    endtask
 
 endclass

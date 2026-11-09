@@ -14,9 +14,9 @@ class router_agent_config extends uvm_object;
 
     //// Slave Driver Control Knobs ////
     
-    // How many cycles delay before sending a credit
-    int min_credit_delay = 0;
-    int max_credit_delay = 0;
+    // How many cycles delay before sending a credit per vc
+    int min_credit_delay[VC_NUM] = '{default: 0};
+    int max_credit_delay[VC_NUM] = '{default: 0} ;
 
     //// Master Driver Control Knobs ////
 
