@@ -33,6 +33,8 @@ class router_scoreboard extends uvm_scoreboard;
     // Statistics for the report_phase summary
     int unsigned n_flits_in, n_flits_out;
     int unsigned n_pkts_in,  n_pkts_out;
+    int unsigned n_demoted; // Changed vc_id from ADAPTIVE to ESCAPE
+
 
     function new(string name = "router_scoreboard", uvm_component parent = null);
         super.new(name, parent);
@@ -109,6 +111,14 @@ class router_scoreboard extends uvm_scoreboard;
             pkt.matched  = 1;
             pkt.next_out = 1; // HEAD already checked by find_match
             check_routing(pkt, t);
+            
+            // VC Demotion Check
+            if(pkt.in_vc == ADAPTIVE && t.vc_id == ESCAPE) begin
+                n_demoted++;
+                `uvm_info(get_type_name(), $sformatf("DEMOTION ADAPTIVE->ESCAPE on %s: %s",
+                        t.port.name(), t.convert2string()), UVM_LOW)
+            end
+
             out_open[t.port][t.vc_id] = pkt;
             `uvm_info(get_type_name(), $sformatf("MATCH %s -> %s", pkt.flits[0].convert2string(), t.convert2string()), UVM_LOW)
         end
@@ -196,8 +206,8 @@ class router_scoreboard extends uvm_scoreboard;
 
     virtual function void report_phase(uvm_phase phase);
         super.report_phase(phase);
-        `uvm_info(get_type_name(), $sformatf("Summary: packets in=%0d out=%0d left=%0d | flits in=%0d out=%0d",
-                n_pkts_in, n_pkts_out, in_flight.size(), n_flits_in, n_flits_out), UVM_NONE)
+        `uvm_info(get_type_name(), $sformatf("Summary: packets in=%0d out=%0d left=%0d demoted=%0d | flits in=%0d out=%0d",
+                n_pkts_in, n_pkts_out, in_flight.size(), n_demoted, n_flits_in, n_flits_out), UVM_NONE)
     endfunction
 
     // ------------------------------------------------------------------

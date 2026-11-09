@@ -30,4 +30,5 @@ package router_pkg;
     `include "router_contention_test.sv"
     `include "router_no_head_packet_test.sv"
     `include "router_no_tail_packet_test.sv"
+    `include "router_vc_demotion_test.sv"
 endpackage
