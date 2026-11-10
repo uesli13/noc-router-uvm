@@ -89,9 +89,11 @@ class router_base_test extends uvm_test;
             master_cfg[i].port_id = port_t'(i);
             slave_cfg[i].port_id  = port_t'(i);
 
-            // Default flit consumption delay in the slave driver
-            slave_cfg[i].min_credit_delay = '{default: 1};
-            slave_cfg[i].max_credit_delay = '{default: 1};
+            // Default packet and flit consumption delay in the slave driver
+            slave_cfg[i].min_credit_delay = '{default: 4};
+            slave_cfg[i].max_credit_delay = '{default: 4};
+            slave_cfg[i].min_flit_delay = '{default: 0};
+            slave_cfg[i].max_flit_delay = '{default: 0};
 
             if(!uvm_config_db#(virtual router_if)::get(this, "", down_vif_path, master_cfg[i].vif))
                 `uvm_fatal(get_type_name(), $sformatf("Missing Downstream VIF for %s", PORT_NAMES[i]))

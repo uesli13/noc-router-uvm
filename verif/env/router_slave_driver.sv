@@ -6,6 +6,7 @@ class router_slave_driver extends uvm_driver;
 
     int pending_credits[2];     // Counts the number of credits that need to be sent to DUT
     bit pending_allocatable[2]; // Knows if TAIL or HEADTAIL flit is passed, to drive the is_allocatable signal
+    bit pending_head[2];        // Tells if HEAD or HEADTAIL flit is received and its packet delay is not applied yet
 
     // End-of-test mechanism
     uvm_phase run_ph;     // Run phase handle (for raise/drop objections)
@@ -52,6 +53,7 @@ class router_slave_driver extends uvm_driver;
         vif.slave_cb.is_allocatable  <= 2'b00;
         pending_credits     = '{0, 0};
         pending_allocatable = '{0, 0};
+        pending_head        = '{0, 0};
         slv_obj_drop();
     endtask
 
@@ -66,6 +68,11 @@ class router_slave_driver extends uvm_driver;
                 
                 // Increase the credits counter
                 pending_credits[int'(f.vc_id)]++;
+
+                if (f.flit_label == HEAD || f.flit_label == HEADTAIL) begin
+                    // New packet, so the packet delay has to be applied before its first credit
+                    pending_head[f.vc_id] = 1'b1;
+                end
                 
                 if (f.flit_label == TAIL || f.flit_label == HEADTAIL) begin
                     // If TAIL or HEADTAIL is received, is_allocatable needs to be rose
@@ -89,10 +96,16 @@ class router_slave_driver extends uvm_driver;
             // Check if credits need to be sent
             if (pending_credits[int'(vc_id)] > 0) begin
                 
-                // Choose random cycles delay using config
-                int delay = $urandom_range(cfg.min_credit_delay[vc_id], cfg.max_credit_delay[vc_id]);
-                
-                // Simulate delay of sending a flit
+                // Per-flit delay: applied before every credit
+                int delay = $urandom_range(cfg.min_flit_delay[vc_id], cfg.max_flit_delay[vc_id]);
+
+                // Per-packet delay: applied once, before the first credit of a packet
+                if (pending_head[vc_id]) begin
+                    delay += $urandom_range(cfg.min_credit_delay[vc_id], cfg.max_credit_delay[vc_id]);
+                    pending_head[vc_id] = 1'b0;
+                end
+
+                // Simulate delay of consuming a flit
                 repeat(delay) @(vif.slave_cb);
 
                 // Send a credit
