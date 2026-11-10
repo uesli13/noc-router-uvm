@@ -8,7 +8,7 @@ class router_sanity_seq extends uvm_sequence #(router_seq_item);
     virtual task body();
         router_seq_item req;
 
-        `uvm_info(get_type_name(), "Starting Sanity Sequence...", UVM_LOW)
+        `uvm_info(get_type_name(), "Starting Sanity Sequence...", UVM_MEDIUM)
 
         req = router_seq_item::type_id::create("req");
 
@@ -25,6 +25,6 @@ class router_sanity_seq extends uvm_sequence #(router_seq_item);
 
         finish_item(req);
 
-        `uvm_info(get_type_name(), $sformatf("Sanity Sequence finished. Sent Flit: %s", req.convert2string()), UVM_LOW)
+        `uvm_info(get_type_name(), $sformatf("Sanity Sequence finished. Sent Flit: %s", req.convert2string()), UVM_HIGH)
     endtask
 endclass

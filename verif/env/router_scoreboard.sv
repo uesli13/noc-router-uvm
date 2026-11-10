@@ -116,11 +116,11 @@ class router_scoreboard extends uvm_scoreboard;
             if(pkt.in_vc == ADAPTIVE && t.vc_id == ESCAPE) begin
                 n_demoted++;
                 `uvm_info(get_type_name(), $sformatf("DEMOTION ADAPTIVE->ESCAPE on %s: %s",
-                        t.port.name(), t.convert2string()), UVM_LOW)
+                        t.port.name(), t.convert2string()), UVM_MEDIUM)
             end
 
             out_open[t.port][t.vc_id] = pkt;
-            `uvm_info(get_type_name(), $sformatf("MATCH %s -> %s", pkt.flits[0].convert2string(), t.convert2string()), UVM_LOW)
+            `uvm_info(get_type_name(), $sformatf("MATCH %s -> %s", pkt.flits[0].convert2string(), t.convert2string()), UVM_MEDIUM)
         end
         else begin
             pkt = out_open[t.port][t.vc_id];

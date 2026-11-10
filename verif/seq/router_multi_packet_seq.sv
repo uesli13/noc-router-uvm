@@ -21,7 +21,7 @@ class router_multi_packet_seq extends uvm_sequence #(router_seq_item);
     virtual task body();
         router_packet_seq pkt_seq;
 
-        `uvm_info(get_type_name(), $sformatf("Starting %0d packets", num_packets), UVM_LOW)
+        `uvm_info(get_type_name(), $sformatf("Starting %0d packets", num_packets), UVM_MEDIUM)
 
         for (int n = 0; n < num_packets; n++) begin
             pkt_seq = router_packet_seq::type_id::create($sformatf("pkt_%0d", n));
@@ -35,11 +35,11 @@ class router_multi_packet_seq extends uvm_sequence #(router_seq_item);
                 `uvm_fatal(get_type_name(), $sformatf("Randomization failed for packet %0d", n))
             end
 
-            `uvm_info(get_type_name(), $sformatf("Packet %0d/%0d", n + 1, num_packets), UVM_LOW)
+            `uvm_info(get_type_name(), $sformatf("Packet %0d/%0d", n + 1, num_packets), UVM_MEDIUM)
             pkt_seq.start(m_sequencer, this);
         end
 
-        `uvm_info(get_type_name(), "All packets finished", UVM_LOW)
+        `uvm_info(get_type_name(), "All packets finished", UVM_MEDIUM)
     endtask
 
 endclass

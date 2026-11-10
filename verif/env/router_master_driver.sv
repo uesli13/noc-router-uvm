@@ -99,7 +99,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
                     // Sync the item with the VC actually used (it may change by falling from ADAPTIVE to ESCAPE)
                     req.vc_id = vc_class_t'(current_flit.vc_id);
                     
-                    `uvm_info(get_type_name(), $sformatf("Driving Flit to DUT: %s", req.convert2string()), UVM_LOW)
+                    `uvm_info(get_type_name(), $sformatf("Driving Flit to DUT: %s", req.convert2string()), UVM_HIGH)
 
                     // Update counters
                     vc_credits[current_flit.vc_id]--;
@@ -115,7 +115,7 @@ class router_master_driver extends uvm_driver #(router_seq_item);
 
                     //Check for underflow
                     if(vc_credits[current_flit.vc_id] <0) begin
-                        `uvm_error(get_type_name(), $sformatf("[CRED_UNF] Credit underflow in VC %0d!", current_flit.vc_id))
+                        `uvm_error("CRED_UNF", $sformatf("Credit underflow in VC %s!", req.vc_id.name()))
                     end
 
                     seq_item_port.item_done();
@@ -169,18 +169,18 @@ class router_master_driver extends uvm_driver #(router_seq_item);
                 vc_credits[i]++;
                 `uvm_info(get_type_name(),
                     $sformatf("Received 1 Credit from DUT for VC %s (available: %0d/%0d)",
-                        vc.name(), vc_credits[i], VC_DEPTH), UVM_LOW)
+                        vc.name(), vc_credits[i], VC_DEPTH), UVM_FULL)
 
                 // Check for overflow
                 if(vc_credits[i] > VC_DEPTH) begin
-                    `uvm_error(get_type_name(), $sformatf("[CRED_OVF] Credit overflow in VC %s!", vc.name()))
+                    `uvm_error("CRED_OVF", $sformatf("Credit overflow in VC %s!", vc.name()))
                 end
             end
 
             // Update allocatability
             if(vif.master_cb.is_allocatable[i]) begin
                 is_vc_allocatable[i] = 1'b1;
-                `uvm_info(get_type_name(), $sformatf("DUT VC %s is allocatable again", vc.name()), UVM_LOW)
+                `uvm_info(get_type_name(), $sformatf("DUT VC %s is allocatable again", vc.name()), UVM_FULL)
             end
         end
     endfunction

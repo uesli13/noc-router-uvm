@@ -27,7 +27,7 @@ class router_packet_seq extends uvm_sequence #(router_seq_item);
         flit_label_t    label;
 
         `uvm_info(get_type_name(), $sformatf("Starting packet: len=%0d vc=%s dest=(%0d,%0d)",
-                  pkt_len, pkt_vc.name(), pkt_x_dest, pkt_y_dest), UVM_LOW)
+                  pkt_len, pkt_vc.name(), pkt_x_dest, pkt_y_dest), UVM_MEDIUM)
 
         for (int i = 0; i < pkt_len; i++) begin
 
@@ -47,7 +47,7 @@ class router_packet_seq extends uvm_sequence #(router_seq_item);
             finish_item(req);
         end
 
-        `uvm_info(get_type_name(), "Packet finished", UVM_LOW)
+        `uvm_info(get_type_name(), "Packet finished", UVM_HIGH)
     endtask
     
     // Decide the flit's label from its position in the packet

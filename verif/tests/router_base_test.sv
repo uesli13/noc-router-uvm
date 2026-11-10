@@ -149,7 +149,7 @@ class router_base_test extends uvm_test;
         seq.xd  = xd;
         seq.yd  = yd;
 
-        if(!seq.randomize() with {(local::num_pkts > 0) ->  num_packets == local::npkt;})
+        if(!seq.randomize() with {(local::npkt > 0) ->  num_packets == local::npkt;})
             `uvm_fatal(get_type_name(), $sformatf("Randomization failed for %s", name))
 
         `uvm_info(get_type_name(), $sformatf("Stimulus %s: src=%s npkt=%0d len=%0d vc=%0d dest=(%0d,%0d)  [-1 = random]",

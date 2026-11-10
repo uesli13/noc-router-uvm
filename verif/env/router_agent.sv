@@ -20,7 +20,7 @@ class router_agent extends uvm_agent;
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         if(!uvm_config_db #(router_agent_config)::get(this, "", "cfg", cfg)) begin
-            `uvm_fatal(get_type_name(), "[NOCFG] Failed to get agent configuration object from config_db")
+            `uvm_fatal("NOCFG", "Failed to get agent configuration object from config_db")
         end
 
         // Pass configuration object lower in the hierarchy
@@ -42,13 +42,13 @@ class router_agent extends uvm_agent;
                 // Create master driver
                 master_drv = router_master_driver::type_id::create("master_drv", this);
                 
-                `uvm_info(get_type_name(), "Building Agent in MASTER mode", UVM_LOW)
+                `uvm_info(get_type_name(), "Building Agent in MASTER mode", UVM_HIGH)
             end
             else if(cfg.mode == SLAVE_AGENT) begin
                 // Create slave driver
                 slave_drv = router_slave_driver::type_id::create("slave_drv", this);
                 // *No sequencer is needed for the slave driver
-                `uvm_info(get_type_name(), "Building Agent in SLAVE mode", UVM_LOW)
+                `uvm_info(get_type_name(), "Building Agent in SLAVE mode", UVM_HIGH)
             end
             else begin
                 `uvm_fatal(get_type_name(), "Unknown Agent Mode! Cannot build driver.")

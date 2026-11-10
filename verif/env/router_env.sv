@@ -14,7 +14,7 @@ class router_env extends uvm_env;
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        `uvm_info(get_type_name(), "Building 5 Master and 5 Slave agents", UVM_LOW)
+        `uvm_info(get_type_name(), "Building 5 Master and 5 Slave agents", UVM_HIGH)
 
         for(int i = 0; i<5; i++) begin
             string master_name = $sformatf("master_%s", PORT_NAMES[i]);
