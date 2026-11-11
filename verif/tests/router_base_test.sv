@@ -5,6 +5,10 @@ class router_base_test extends uvm_test;
     router_agent_config master_cfg[5];
     router_agent_config slave_cfg[5];
 
+    //DUT's position in the mesh
+    int dut_x;
+    int dut_y;
+
     // End-of-test settings
     time         drain_time     = 3 * CLK_PERIOD;
     int unsigned stall_limit    = 1000;   // cycles without output          (+STALL_LIMIT=)
@@ -28,6 +32,13 @@ class router_base_test extends uvm_test;
         super.build_phase(phase);
 
         env = router_env::type_id::create("env", this);
+
+        if(!uvm_config_db#(int)::get(this, "", "DUT_X_CUR", dut_x) ||
+           !uvm_config_db#(int)::get(this, "", "DUT_Y_CUR", dut_y))
+            `uvm_fatal(get_type_name(), "Missing DUT coordinates in config_db")
+        
+        `uvm_info(get_type_name(), $sformatf("DUT position: (%0d,%0d) in a %0dx%0d mesh", 
+                   dut_x, dut_y, MESH_SIZE_X, MESH_SIZE_Y), UVM_LOW)
 
         set_default_knobs(); // Each test's own defaults
         read_plusargs();     // Command line overrides
@@ -157,5 +168,29 @@ class router_base_test extends uvm_test;
 
         seq.start(env.master_agents[src].sequencer);
     endtask
+
+        // Does the DUT have a neighbour on this port at its current position?
+    function bit port_exists(port_t p);
+        case (p)
+            WEST:    return dut_x > 0;
+            EAST:    return dut_x < MESH_SIZE_X - 1;
+            SOUTH:   return dut_y > 0;
+            NORTH:   return dut_y < MESH_SIZE_Y - 1;
+            default: return 1; // LOCAL
+        endcase
+    endfunction
+
+    // Can a packet with this VC and destination arrive at this input port
+    function bit is_legal(port_t in, int vc, int xd, int yd);
+        if (!port_exists(in)) return 0;
+        case (in)
+            WEST:    return xd >= dut_x;
+            EAST:    return xd <= dut_x;
+            // ESCAPE packets move in Y only after X is done (XY routing)
+            SOUTH:   return yd >= dut_y && (vc == ADAPTIVE || xd == dut_x);
+            NORTH:   return yd <= dut_y && (vc == ADAPTIVE || xd == dut_x);
+            default: return !(xd == dut_x && yd == dut_y); // LOCAL (no LOCAL -> LOCAL)
+        endcase
+    endfunction
 
 endclass

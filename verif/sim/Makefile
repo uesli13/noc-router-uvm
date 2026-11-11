@@ -97,6 +97,17 @@ EXPECT_FAIL   = router_no_head_packet_test \
 
 LOG_DIR = logs
 
+
+# Tests that are position-independent: run at every DUT position
+POS_TESTS = router_port_sweep_test
+
+# DUT positions as x_y
+POSITIONS ?= 0_0 0_1 1_0 1_1
+
+# One entry per simulation: <test>@<x>_<y>
+RUNS = $(foreach t,$(REGRESS_TESTS) $(EXPECT_FAIL),$(t)@$(X_CUR)_$(Y_CUR)) \
+       $(foreach t,$(POS_TESTS),$(foreach p,$(POSITIONS),$(t)@$(p)))
+
 # ------------------------------------------------------------------------------
 # Execution Targets
 # ------------------------------------------------------------------------------
@@ -109,19 +120,21 @@ run:
 # Run every test with its own log in $(LOG_DIR), then print one line per test
 regress:
 	@mkdir -p $(LOG_DIR)
-	@for t in $(REGRESS_TESTS) $(EXPECT_FAIL); do \
-	    echo "Running $$t ..."; \
-		$(MAKE) --no-print-directory run TESTNAME=$$t LOG=$(LOG_DIR)/$$t.log > /dev/null 2>&1 || true; \
+	@for r in $(RUNS); do \
+		t=$${r%@*}; p=$${r#*@}; x=$${p%_*}; y=$${p#*_}; \
+		echo "Running $$t at ($$x,$$y) ..."; \
+		$(MAKE) --no-print-directory run TESTNAME=$$t X_CUR=$$x Y_CUR=$$y LOG=$(LOG_DIR)/$${t}_$$p.log > /dev/null 2>&1 || true; \
 	done
 	@echo ""
 	@echo "==================== Regression summary ===================="
-	@for t in $(REGRESS_TESTS) $(EXPECT_FAIL); do \
-	    f=$(LOG_DIR)/$$t.log; \
-	    if   grep -q "TEST PASSED" $$f; then r="PASSED"; \
-	    elif grep -q "TEST FAILED" $$f; then r="FAILED"; \
-	    else r="NO RESULT (check the log)"; fi; \
-	    case " $(EXPECT_FAIL) " in *" $$t "*) r="$$r   [expected: FAILED]";; esac; \
-	    printf "  %-32s %s\n" $$t "$$r"; \
+	@for r in $(RUNS); do \
+		t=$${r%@*}; p=$${r#*@}; x=$${p%_*}; y=$${p#*_}; \
+		f=$(LOG_DIR)/$${t}_$$p.log; \
+		if   grep -q "TEST PASSED" $$f; then res="PASSED"; \
+		elif grep -q "TEST FAILED" $$f; then res="FAILED"; \
+		else res="NO RESULT (check the log)"; fi; \
+		case " $(EXPECT_FAIL) " in *" $$t "*) res="$$res   [expected: FAILED]";; esac; \
+		printf "  %-30s (%s,%s)  %s\n" $$t $$x $$y "$$res"; \
 	done
 	@echo "============================================================"
 	@echo "Logs in $(LOG_DIR)/"
