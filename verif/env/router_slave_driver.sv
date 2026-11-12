@@ -101,7 +101,7 @@ class router_slave_driver extends uvm_driver;
 
                 // Per-packet delay: applied once, before the first credit of a packet
                 if (pending_head[vc_id]) begin
-                    delay += $urandom_range(cfg.min_credit_delay[vc_id], cfg.max_credit_delay[vc_id]);
+                    delay += $urandom_range(cfg.min_pkt_delay[vc_id], cfg.max_pkt_delay[vc_id]);
                     pending_head[vc_id] = 1'b0;
                 end
 

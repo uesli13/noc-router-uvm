@@ -101,8 +101,8 @@ class router_base_test extends uvm_test;
             slave_cfg[i].port_id  = port_t'(i);
 
             // Default packet and flit consumption delay in the slave driver
-            slave_cfg[i].min_credit_delay = '{default: 4};
-            slave_cfg[i].max_credit_delay = '{default: 4};
+            slave_cfg[i].min_pkt_delay = '{default: 4};
+            slave_cfg[i].max_pkt_delay = '{default: 4};
             slave_cfg[i].min_flit_delay = '{default: 0};
             slave_cfg[i].max_flit_delay = '{default: 0};
 

@@ -32,8 +32,8 @@ class router_vc_demotion_test extends router_base_test;
                     num_pkts, 2 * hold_cycles * CLK_PERIOD))
 
         foreach (blocked_ports[i]) begin
-            slave_cfg[blocked_ports[i]].min_credit_delay[ADAPTIVE] = hold_cycles;
-            slave_cfg[blocked_ports[i]].max_credit_delay[ADAPTIVE] = hold_cycles;
+            slave_cfg[blocked_ports[i]].min_pkt_delay[ADAPTIVE] = hold_cycles;
+            slave_cfg[blocked_ports[i]].max_pkt_delay[ADAPTIVE] = hold_cycles;
         end
     endfunction
 

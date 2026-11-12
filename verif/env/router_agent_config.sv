@@ -15,8 +15,8 @@ class router_agent_config extends uvm_object;
     //// Slave Driver Control Knobs ////
     
     // Per-packet delay: cycles before the first credit of a packet, per vc.
-    int min_credit_delay[VC_NUM] = '{default: 0};
-    int max_credit_delay[VC_NUM] = '{default: 0} ;
+    int min_pkt_delay[VC_NUM] = '{default: 0};
+    int max_pkt_delay[VC_NUM] = '{default: 0} ;
 
     // Per-flit delay: extra cycles before every credit, per vc
     int min_flit_delay[VC_NUM] = '{default: 0};
