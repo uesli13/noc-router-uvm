@@ -10,6 +10,11 @@ class router_packet_seq extends uvm_sequence #(router_seq_item);
     // Packets consist of 1 to MAX_PACKET_LEN flits
     constraint c_len {
         pkt_len inside {[1:MAX_PACKET_LEN]};
+        pkt_len dist {
+            [1:VC_DEPTH-1]               :/ 30,
+            [VC_DEPTH:VC_DEPTH+1]        :/ 30,
+            [VC_DEPTH+2:MAX_PACKET_LEN]  :/ 40
+        };
     }
 
     // Destination should be inside the mesh
