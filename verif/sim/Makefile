@@ -99,7 +99,9 @@ LOG_DIR = logs
 
 
 # Tests that are position-independent: run at every DUT position
-POS_TESTS = router_port_sweep_test
+POS_TESTS = router_port_sweep_test \
+			router_contention_sweep_test
+
 
 # DUT positions as x_y
 POSITIONS ?= 0_0 0_1 1_0 1_1

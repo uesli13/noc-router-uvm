@@ -184,4 +184,16 @@ class router_master_driver extends uvm_driver #(router_seq_item);
             end
         end
     endfunction
+
+    // Returns 0 if there's ongoing transaction or credits/is_allocatable are owed to the master from the DUT
+    // Returns 1 if mater is in idle state
+    function bit nothing_pending();
+        if (req_pending || open_packet)
+            return 0;
+        for (int vc = 0; vc < VC_NUM; vc++)
+            if (vc_credits[vc] != VC_DEPTH || !is_vc_allocatable[vc])
+                return 0;
+        return 1;
+    endfunction
+
 endclass

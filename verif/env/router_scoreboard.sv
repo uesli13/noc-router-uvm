@@ -3,10 +3,13 @@
 
 class router_sb_packet;
     port_t          in_port;   // Port where the packet entered the DUT
+    port_t          out_port;  // Port that the packet exited the DUT from
     vc_class_t      in_vc;     // VC used at the DUT input
     router_seq_item flits[$];  // Flits as captured at the input, in order
     bit             matched;   // Set when the output HEAD has been matched to this packet
     int             next_out;  // Index in flits[] of the next flit expected at the output
+    time            t_in;      // The time the packet entered the DUT
+    time            t_out;     // The time the packet fully exited the DUT
 endclass
 
 class router_scoreboard extends uvm_scoreboard;
@@ -21,6 +24,8 @@ class router_scoreboard extends uvm_scoreboard;
 
     router_sb_packet in_open [PORT_NUM][VC_NUM]; // Packet being received at each input (port, VC)
     router_sb_packet out_open[PORT_NUM][VC_NUM]; // Packet being transmitted at each output (port, VC)
+
+    router_sb_packet done_pkts[$]; // Packets that fully left the DUT, in exit order
 
     // End-of-test mechanism
     // The Scoreboard holds ONE objection on the run phase while in_flight is not empty
@@ -77,6 +82,7 @@ class router_scoreboard extends uvm_scoreboard;
             pkt.in_vc   = t.vc_id;
             in_flight.push_back(pkt);
             in_open[t.port][t.vc_id] = pkt;
+            pkt.t_in = $time;
             n_pkts_in++;
             sb_obj_raise();
         end
@@ -110,6 +116,7 @@ class router_scoreboard extends uvm_scoreboard;
             end
             pkt.matched  = 1;
             pkt.next_out = 1; // HEAD already checked by find_match
+            pkt.out_port = t.port;
             check_routing(pkt, t);
             
             // VC Demotion Check
@@ -137,9 +144,11 @@ class router_scoreboard extends uvm_scoreboard;
         end
 
         if (t.flit_label inside {TAIL, HEADTAIL}) begin
+            pkt.t_out = $time;
+            done_pkts.push_back(pkt);
+            n_pkts_out++;
             out_open[t.port][t.vc_id] = null;
             remove_in_flight(pkt);
-            n_pkts_out++;
             sb_obj_drop(); // No-op unless in_flight just went 1 -> 0
         end
     endfunction

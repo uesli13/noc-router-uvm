@@ -169,7 +169,7 @@ class router_base_test extends uvm_test;
         seq.start(env.master_agents[src].sequencer);
     endtask
 
-        // Does the DUT have a neighbour on this port at its current position?
+    // Does the DUT have a neighbour on this port at its current position?
     function bit port_exists(port_t p);
         case (p)
             WEST:    return dut_x > 0;
@@ -192,5 +192,30 @@ class router_base_test extends uvm_test;
             default: return !(xd == dut_x && yd == dut_y); // LOCAL (no LOCAL -> LOCAL)
         endcase
     endfunction
+
+    // Finds destination coordinates of neighbours in the direction of given output port
+    function void out_dest(port_t out, output int xd, output int yd);
+        xd = dut_x;
+        yd = dut_y;
+        case(out)
+            WEST:    xd = dut_x - 1;
+            EAST:    xd = dut_x + 1;
+            SOUTH:   yd = dut_y - 1;
+            NORTH:   yd = dut_y + 1;
+        endcase
+    endfunction
+
+    // Wait untill all sent packets exited the DUT and all credits have been sent from DUT and agents 
+    task wait_dut_idle(int unsigned n_expected_out);
+        wait (env.sb.n_pkts_out == n_expected_out);
+
+        foreach (env.slave_agents[i])
+            while (!env.slave_agents[i].slave_drv.nothing_pending())
+                #(CLK_PERIOD);
+
+        foreach (env.master_agents[i])
+            while (!env.master_agents[i].master_drv.nothing_pending())
+                #(CLK_PERIOD);
+    endtask
 
 endclass
