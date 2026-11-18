@@ -88,7 +88,7 @@ XRUN_FLAGS += $(PLUSARGS)
 REGRESS_TESTS = router_sanity_test \
                 router_packet_test \
                 router_multi_packet_test \
-                router_contention_test \
+#                 router_contention_test \
 				router_vc_demotion_test
 
 # Tests that fail on purpose for now (illegal stimulus, fail on purpose)

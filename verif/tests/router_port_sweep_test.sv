@@ -30,13 +30,8 @@ class router_port_sweep_test extends router_base_test;
                                      in, num_pkts, pkt_len, vc, xd, yd);
                         n_sent += num_pkts;
 
-                        // Wait until the packets have left the DUT, so combinations don't overlap
-                        wait (env.sb.n_pkts_out == n_sent);
-                        
-                        // Wait until every slave has returned all its credits and is_allocatable
-                        foreach (env.slave_agents[i])
-                            while (!env.slave_agents[i].slave_drv.nothing_pending())
-                                #(CLK_PERIOD);
+                        // Wait untill packets have left the DUT and agents are idle so packets do not overlap
+                        wait_dut_idle(n_sent);
 
                     end
     endtask

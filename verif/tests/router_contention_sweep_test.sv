@@ -88,7 +88,7 @@ class router_contention_sweep_test extends router_base_test;
         if (n_scenarios == 0)
             `uvm_error("CONTENTION_EMPTY", "No legal pair of inputs was found for this DUT position")
         else
-            `uvm_info(get_type_name(), $sformatf("Output contention at (%0d,%0d): %0d/%0d scenarios with contention, %0d demoted",
+            `uvm_info(get_type_name(), $sformatf("Contention sweep at (%0d,%0d): %0d/%0d scenarios with contention, %0d demoted",
                       dut_x, dut_y, n_contended, n_scenarios, env.sb.n_demoted), UVM_LOW)
     endfunction
 endclass
